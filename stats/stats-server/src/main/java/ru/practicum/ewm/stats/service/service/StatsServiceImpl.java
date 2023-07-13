@@ -10,6 +10,7 @@ import ru.practicum.ewm.stats.service.mapper.EndpointHitMapper;
 import ru.practicum.ewm.stats.service.model.EndpointHit;
 import ru.practicum.ewm.stats.service.repository.EndpointHitRepository;
 
+import javax.transaction.Transactional;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -23,6 +24,7 @@ public class StatsServiceImpl implements StatsService {
     private final String datePattern = "yyyy-MM-dd HH:mm:ss";
     private final SimpleDateFormat formatter = new SimpleDateFormat(datePattern);
 
+    @Transactional
     @Override
     public EndpointHit addHit(EndpointHitDto endpointHitDto) {
         EndpointHit endpointHit = EndpointHitMapper.map(endpointHitDto);
