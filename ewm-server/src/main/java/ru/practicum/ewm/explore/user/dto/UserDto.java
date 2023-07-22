@@ -2,12 +2,12 @@ package ru.practicum.ewm.explore.user.dto;
 
 import lombok.*;
 
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Setter
-@Getter
 @ToString
-@Builder
+@Getter
+@Setter
 public class UserDto {
     private Long id;
     private String email;

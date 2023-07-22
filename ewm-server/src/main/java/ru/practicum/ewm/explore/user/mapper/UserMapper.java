@@ -6,7 +6,7 @@ import ru.practicum.ewm.explore.user.dto.UserShortDto;
 import ru.practicum.ewm.explore.user.model.User;
 
 public class UserMapper {
-    public static UserDto userToDto(User user) {
+    public static UserDto toDto(User user) {
         return UserDto.builder()
                 .id(user.getId())
                 .email(user.getEmail())
@@ -14,14 +14,14 @@ public class UserMapper {
                 .build();
     }
 
-    public static UserShortDto userToShortDto(User user) {
+    public static UserShortDto toShortDto(User user) {
         return UserShortDto.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .build();
     }
 
-    public static User newDtoToUser(UserIncomeDto body) {
+    public static User toUser(UserIncomeDto body) {
         return User.builder()
                 .name(body.getName())
                 .email(body.getEmail())

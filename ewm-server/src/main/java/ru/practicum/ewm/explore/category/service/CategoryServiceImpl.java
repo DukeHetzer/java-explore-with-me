@@ -27,12 +27,12 @@ public class CategoryServiceImpl implements CategoryService {
     private final EventRepository eventRepository;
 
     @Override
-    public CategoryDto create(NewCategoryDto body) {
+    public CategoryDto createCategory(NewCategoryDto body) {
         return toDto(categoryRepository.save(toCategory(body)));
     }
 
     @Override
-    public Category readById(Long catId) {
+    public Category readCategory(Long catId) {
         return categoryRepository.findById(catId).orElseThrow(
                 () -> new NotFoundException("Category с таким id не найдена"));
     }
@@ -44,14 +44,14 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public CategoryDto update(Long categoryId, CategoryDto body) {
-        Category category = readById(categoryId);
+    public CategoryDto updateCategory(Long categoryId, CategoryDto body) {
+        Category category = readCategory(categoryId);
         category.setName(body.getName());
         return toDto(categoryRepository.save(category));
     }
 
     @Override
-    public void deleteById(Long catId) {
+    public void deleteCategory(Long catId) {
         if (categoryRepository.existsById(catId) && eventRepository.findEventsByCategoryId(catId).stream().findAny().isEmpty()) {
             categoryRepository.deleteById(catId);
         } else

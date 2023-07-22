@@ -6,14 +6,14 @@ import javax.persistence.*;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.Size;
 
+@Entity
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Getter
 @Setter
-@Builder
-@ToString
 @EqualsAndHashCode(of = "id")
-@Entity
 @Table(name = "users")
 public class User {
     @Id

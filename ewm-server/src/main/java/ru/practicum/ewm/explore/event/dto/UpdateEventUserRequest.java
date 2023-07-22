@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.jackson.Jacksonized;
-import ru.practicum.ewm.explore.enumerated.StateAction;
+import ru.practicum.ewm.explore.enumerated.StatusEvent;
 import ru.practicum.ewm.explore.event.model.Location;
 
 import javax.validation.constraints.Size;
@@ -24,7 +24,7 @@ public class UpdateEventUserRequest {
     private Long category;
     @Size(min = 20, max = 7000)
     private String description;
-    private StateAction stateAction;
+    private StatusEvent stateAction;
     @Size(min = 3, max = 120)
     private String title;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")

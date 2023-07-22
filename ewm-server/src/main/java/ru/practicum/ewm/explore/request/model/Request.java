@@ -2,24 +2,24 @@ package ru.practicum.ewm.explore.request.model;
 
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
-import ru.practicum.ewm.explore.enumerated.ParticipationStatus;
+import ru.practicum.ewm.explore.enumerated.RequestStatus;
 import ru.practicum.ewm.explore.event.model.Event;
 import ru.practicum.ewm.explore.user.model.User;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
+@Entity
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Jacksonized
+@ToString
 @Getter
 @Setter
-@Builder
-@ToString
 @EqualsAndHashCode(of = "id")
-@Entity
 @Table(name = "requests")
-@Jacksonized
-public class ParticipationRequest {
+public class Request {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -38,5 +38,5 @@ public class ParticipationRequest {
 
     @Column(name = "status", nullable = false)
     @Enumerated(EnumType.STRING)
-    private ParticipationStatus status;
+    private RequestStatus status;
 }

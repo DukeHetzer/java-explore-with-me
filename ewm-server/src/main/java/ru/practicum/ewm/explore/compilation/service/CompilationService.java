@@ -7,13 +7,13 @@ import ru.practicum.ewm.explore.compilation.model.Compilation;
 import java.util.List;
 
 public interface CompilationService {
-    Compilation create(UpdateCompilationDto body);
+    Compilation createCompilation(UpdateCompilationDto body);
+
+    Compilation readCompilation(Long compilationId);
 
     List<CompilationDto> readAllCompilations(Boolean pinned, Integer from, Integer size);
 
-    Compilation readById(Long compilationId);
+    CompilationDto updateCompilation(Long compilationId, UpdateCompilationDto body);
 
-    CompilationDto updateById(Long compilationId, UpdateCompilationDto body);
-
-    void deleteById(Long compilationId);
+    void deleteCompilation(Long compilationId);
 }

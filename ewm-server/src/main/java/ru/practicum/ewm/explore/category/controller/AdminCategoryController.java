@@ -18,21 +18,21 @@ import javax.validation.Valid;
 public class AdminCategoryController {
     private final CategoryService service;
 
-    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CategoryDto createAdminCategory(@RequestBody @Valid NewCategoryDto body) {
-        return service.create(body);
+    @PostMapping
+    public CategoryDto createCategory(@RequestBody @Valid NewCategoryDto body) {
+        return service.createCategory(body);
     }
 
     @PatchMapping("/{catId}")
-    public CategoryDto updateAdminCategory(@PathVariable Long catId,
-                                           @RequestBody @Valid CategoryDto body) {
-        return service.update(catId, body);
+    public CategoryDto updateCategory(@PathVariable Long catId,
+                                      @RequestBody @Valid CategoryDto body) {
+        return service.updateCategory(catId, body);
     }
 
     @DeleteMapping("/{catId}")
-    public ResponseEntity<Object> deleteAdminCategory(@PathVariable Long catId) {
-        service.deleteById(catId);
+    public ResponseEntity<Object> deleteCategory(@PathVariable Long catId) {
+        service.deleteCategory(catId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

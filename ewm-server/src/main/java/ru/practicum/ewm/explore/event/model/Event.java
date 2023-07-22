@@ -3,7 +3,7 @@ package ru.practicum.ewm.explore.event.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import ru.practicum.ewm.explore.category.model.Category;
-import ru.practicum.ewm.explore.enumerated.StateAction;
+import ru.practicum.ewm.explore.enumerated.StatusEvent;
 import ru.practicum.ewm.explore.user.model.User;
 
 import javax.persistence.*;
@@ -42,7 +42,7 @@ public class Event {
     private String description;
     @Enumerated(EnumType.STRING)
     @Column(name = "state", nullable = false)
-    private StateAction state;
+    private StatusEvent state;
     @Column(name = "title", nullable = false)
     @Size(min = 3, max = 120)
     private String title;

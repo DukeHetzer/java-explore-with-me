@@ -10,7 +10,7 @@ import java.util.List;
 @Getter
 @ToString
 @Builder
-public class EventRequestStatusUpdateResult {
-    List<ParticipationRequestDto> confirmedRequests;
-    List<ParticipationRequestDto> rejectedRequests;
+public class RequestStatusUpdate {
+    List<RequestDto> confirmedRequests;
+    List<RequestDto> rejectedRequests;
 }

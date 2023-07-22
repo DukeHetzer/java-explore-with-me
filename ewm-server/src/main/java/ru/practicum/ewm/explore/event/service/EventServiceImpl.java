@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.explore.category.service.CategoryService;
 import ru.practicum.ewm.explore.enumerated.EventSort;
-import ru.practicum.ewm.explore.enumerated.ParticipationStatus;
-import ru.practicum.ewm.explore.enumerated.StateAction;
+import ru.practicum.ewm.explore.enumerated.RequestStatus;
+import ru.practicum.ewm.explore.enumerated.StatusEvent;
 import ru.practicum.ewm.explore.event.dto.EventShortDto;
 import ru.practicum.ewm.explore.event.dto.NewEventDto;
 import ru.practicum.ewm.explore.event.dto.UpdateEventUserRequest;
@@ -35,7 +35,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.springframework.data.jpa.domain.Specification.where;
-import static ru.practicum.ewm.explore.event.mapper.EventMapper.newDtoToEvent;
+import static ru.practicum.ewm.explore.event.mapper.EventMapper.toEvent;
+import static ru.practicum.ewm.explore.event.mapper.LocationMapper.toLocation;
 
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -49,11 +50,9 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public Event createUserEvent(Long userId, NewEventDto eventDto) {
-        Location location = Location.builder()
-                .lat(eventDto.getLocation().getLat())
-                .lon(eventDto.getLocation().getLon())
-                .build();
+    public Event createEvent(Long userId, NewEventDto eventDto) {
+        Location location = toLocation(eventDto);
+
         if (eventDto.getPaid() == null) {
             eventDto.setPaid(false);
         }
@@ -64,18 +63,19 @@ public class EventServiceImpl implements EventService {
             eventDto.setRequestModeration(true);
         }
         eventDto.setLocation(locationRepository.save(location));
-        return eventRepository.save(newDtoToEvent(eventDto,
-                categoryService.readById(eventDto.getCategory()),
-                userService.getUserById(userId)));
+
+        return eventRepository.save(toEvent(eventDto,
+                categoryService.readCategory(eventDto.getCategory()),
+                userService.readUser(userId)));
     }
 
     @Override
-    public Event readEventById(Long id) {
+    public Event readEvent(Long id) {
         Event event = findEventById(id);
-        if (!event.getState().equals(StateAction.PUBLISHED)) {
+        if (!event.getState().equals(StatusEvent.PUBLISHED)) {
             throw new NotFoundException("Event с таким id не найден");
         }
-        Long requestCounts = requestRepository.countConfirmedRequests(id, ParticipationStatus.CONFIRMED);
+        Long requestCounts = requestRepository.countConfirmedRequests(id, RequestStatus.CONFIRMED);
         event.setConfirmedRequests(requestCounts);
         event.addView();
 
@@ -102,7 +102,7 @@ public class EventServiceImpl implements EventService {
                                         .and(availablePredicate(onlyAvailable)),
                                 PageRequest.of(from, size, Sort.unsorted())).stream()
                         .sorted(Comparator.comparing(Event::getViews))
-                        .map(EventMapper::eventToShortDto)
+                        .map(EventMapper::toDto)
                         .collect(Collectors.toList());
 
             case EVENT_DATE:
@@ -115,7 +115,7 @@ public class EventServiceImpl implements EventService {
                                         .and(availablePredicate(onlyAvailable)),
                                 PageRequest.of(from, size, Sort.unsorted())).stream()
                         .sorted(Comparator.comparing(Event::getEventDate))
-                        .map(EventMapper::eventToShortDto)
+                        .map(EventMapper::toDto)
                         .collect(Collectors.toList());
             default:
                 return eventRepository.findAll(
@@ -127,14 +127,14 @@ public class EventServiceImpl implements EventService {
                                         .and(availablePredicate(onlyAvailable)),
                                 PageRequest.of(from, size, Sort.unsorted())).stream()
                         .sorted(Comparator.comparing(Event::getId))
-                        .map(EventMapper::eventToShortDto)
+                        .map(EventMapper::toDto)
                         .collect(Collectors.toList());
         }
     }
 
     @Override
     public Event readUserEventById(Long userId, Long eventId) {
-        userService.getUserById(userId);
+        userService.readUser(userId);
         Event event = findEventById(eventId);
         if (!event.getInitiator().getId().equals(userId)) {
             throw new NotAllowedException("User не является основателем этого события");
@@ -144,9 +144,9 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public List<EventShortDto> readUserEvents(Long userId, Integer from, Integer size) {
-        userService.getUserById(userId);
+        userService.readUser(userId);
         return eventRepository.findEventsByInitiatorId(userId, PageRequest.of(from, size, Sort.unsorted())).stream()
-                .map(EventMapper::eventToShortDto)
+                .map(EventMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -160,7 +160,7 @@ public class EventServiceImpl implements EventService {
         }
 
         event.setAnnotation(Optional.ofNullable(body.getAnnotation()).orElse(event.getAnnotation()));
-        event.setCategory(Optional.ofNullable(body.getCategory()).map(categoryService::readById).orElse(event.getCategory()));
+        event.setCategory(Optional.ofNullable(body.getCategory()).map(categoryService::readCategory).orElse(event.getCategory()));
         event.setDescription(Optional.ofNullable(body.getDescription()).orElse(event.getDescription()));
         event.setEventDate(Optional.ofNullable(body.getEventDate()).orElse(event.getEventDate()));
         event.setPaid(Optional.ofNullable(body.getPaid()).orElse(event.getPaid()));
@@ -178,30 +178,30 @@ public class EventServiceImpl implements EventService {
 
         Optional.ofNullable(body.getStateAction())
                 .ifPresent(stateAction -> {
-                    if (event.getState().equals(StateAction.PUBLISHED) && stateAction.equals(StateAction.REJECT_EVENT)) {
+                    if (event.getState().equals(StatusEvent.PUBLISHED) && stateAction.equals(StatusEvent.REJECT_EVENT)) {
                         throw new ConflictRequestException("Событие уже опубликовано");
                     }
-                    if (event.getState().equals(StateAction.PUBLISHED) && stateAction.equals(StateAction.PUBLISH_EVENT)) {
+                    if (event.getState().equals(StatusEvent.PUBLISHED) && stateAction.equals(StatusEvent.PUBLISH_EVENT)) {
                         throw new ConflictRequestException("Событие уже опубликовано");
                     }
-                    if (event.getState().equals(StateAction.REJECTED) && stateAction.equals(StateAction.PUBLISH_EVENT)) {
+                    if (event.getState().equals(StatusEvent.REJECTED) && stateAction.equals(StatusEvent.PUBLISH_EVENT)) {
                         throw new ConflictRequestException("Событие уже опубликовано");
                     }
-                    if (event.getState().equals(StateAction.PUBLISH_EVENT) && stateAction.equals(StateAction.PUBLISHED)) {
+                    if (event.getState().equals(StatusEvent.PUBLISH_EVENT) && stateAction.equals(StatusEvent.PUBLISHED)) {
                         throw new ConflictRequestException("Событие уже опубликовано");
                     }
 
-                    if (stateAction.equals(StateAction.SEND_TO_REVIEW)) {
-                        event.setState(StateAction.PENDING);
+                    if (stateAction.equals(StatusEvent.SEND_TO_REVIEW)) {
+                        event.setState(StatusEvent.PENDING);
                     }
-                    if (stateAction.equals(StateAction.CANCEL_REVIEW)) {
-                        event.setState(StateAction.CANCELED);
+                    if (stateAction.equals(StatusEvent.CANCEL_REVIEW)) {
+                        event.setState(StatusEvent.CANCELED);
                     }
-                    if (stateAction.equals(StateAction.REJECT_EVENT)) {
-                        event.setState(StateAction.REJECTED);
+                    if (stateAction.equals(StatusEvent.REJECT_EVENT)) {
+                        event.setState(StatusEvent.REJECTED);
                     }
-                    if (stateAction.equals(StateAction.PUBLISH_EVENT)) {
-                        event.setState(StateAction.PUBLISHED);
+                    if (stateAction.equals(StatusEvent.PUBLISH_EVENT)) {
+                        event.setState(StatusEvent.PUBLISHED);
                     }
                 });
         return eventRepository.save(event);
@@ -211,16 +211,16 @@ public class EventServiceImpl implements EventService {
     @Transactional
     public Event updateUserEvent(Long eventId, Long userId, UpdateEventUserRequest eventDto) {
         Event event = findEventById(eventId);
-        if (event.getState() != null && event.getState().equals(StateAction.PUBLISHED)) {
+        if (event.getState() != null && event.getState().equals(StatusEvent.PUBLISHED)) {
             throw new ConflictRequestException("Событие уже опубликовано");
         }
-        if (eventDto.getStateAction() != null && eventDto.getStateAction().equals(StateAction.PUBLISHED)) {
+        if (eventDto.getStateAction() != null && eventDto.getStateAction().equals(StatusEvent.PUBLISHED)) {
             throw new ConflictRequestException("Событие уже опубликовано");
         }
-        if (eventDto.getStateAction() != null && eventDto.getStateAction().equals(StateAction.CANCEL_REVIEW)) {
-            event.setState(StateAction.CANCELED);
+        if (eventDto.getStateAction() != null && eventDto.getStateAction().equals(StatusEvent.CANCEL_REVIEW)) {
+            event.setState(StatusEvent.CANCELED);
         }
-        userService.getUserById(userId);
+        userService.readUser(userId);
         if (eventDto.getEventDate() != null && eventDto.getEventDate().isBefore(LocalDateTime.now())) {
             throw new BadRequestException("Событие уже началось");
         }
@@ -228,7 +228,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<Event> searchEvents(List<Long> users, List<StateAction> states, List<Integer> categories,
+    public List<Event> searchEvents(List<Long> users, List<StatusEvent> states, List<Integer> categories,
                                     LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                     Integer from, Integer size) {
         if (users != null || states != null || categories != null || rangeStart != null || rangeEnd != null) {
@@ -318,13 +318,13 @@ public class EventServiceImpl implements EventService {
         };
     }
 
-    private Specification<Event> statesPredicate(List<StateAction> states) {
+    private Specification<Event> statesPredicate(List<StatusEvent> states) {
         return (event, cq, cb) -> {
             if (states == null) {
                 return cb.isTrue(cb.literal(true));
             } else {
-                CriteriaBuilder.In<StateAction> cbStates = cb.in(event.get("state"));
-                for (StateAction state : states) {
+                CriteriaBuilder.In<StatusEvent> cbStates = cb.in(event.get("state"));
+                for (StatusEvent state : states) {
                     cbStates.value(state);
                 }
                 return cbStates;
@@ -349,7 +349,7 @@ public class EventServiceImpl implements EventService {
     private Event updateEventData(Event event, UpdateEventUserRequest dto) {
         return Event.builder()
                 .annotation(dto.getAnnotation() != null ? dto.getAnnotation() : event.getAnnotation())
-                .category(dto.getCategory() != null ? categoryService.readById(dto.getCategory()) : event.getCategory())
+                .category(dto.getCategory() != null ? categoryService.readCategory(dto.getCategory()) : event.getCategory())
                 .confirmedRequests(event.getConfirmedRequests())
                 .createdOn(event.getCreatedOn())
                 .description(dto.getDescription() != null ? dto.getDescription() : event.getDescription())
@@ -360,7 +360,7 @@ public class EventServiceImpl implements EventService {
                 .participantLimit(dto.getParticipantLimit() != null ? dto.getParticipantLimit() : event.getParticipantLimit())
                 .publishedOn(event.getPublishedOn())
                 .requestModeration(dto.getRequestModeration() != null ? dto.getRequestModeration() : event.getRequestModeration())
-                .state(dto.getStateAction() == StateAction.SEND_TO_REVIEW ? StateAction.PENDING : event.getState())
+                .state(dto.getStateAction() == StatusEvent.SEND_TO_REVIEW ? StatusEvent.PENDING : event.getState())
                 .title(dto.getTitle() != null ? dto.getTitle() : event.getTitle())
                 .views(event.getViews())
                 .build();

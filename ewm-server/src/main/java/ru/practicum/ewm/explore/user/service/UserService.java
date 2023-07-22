@@ -7,12 +7,11 @@ import ru.practicum.ewm.explore.user.model.User;
 import java.util.List;
 
 public interface UserService {
+    UserDto createUser(UserIncomeDto body);
 
-    User getUserById(Long userId);
-
-    UserDto addUser(UserIncomeDto body);
-
-    void deleteUserById(Long userId);
+    User readUser(Long userId);
 
     List<UserDto> getUsers(List<Long> ids, Integer from, Integer size);
+
+    void deleteUser(Long userId);
 }

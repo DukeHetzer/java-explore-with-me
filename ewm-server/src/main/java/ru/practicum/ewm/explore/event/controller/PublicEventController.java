@@ -42,6 +42,6 @@ public class PublicEventController {
     public Event readEventById(@PathVariable Long id, HttpServletRequest request) {
         statClient.addStatHit(request);
 
-        return eventService.readEventById(id);
+        return eventService.readEvent(id);
     }
 }

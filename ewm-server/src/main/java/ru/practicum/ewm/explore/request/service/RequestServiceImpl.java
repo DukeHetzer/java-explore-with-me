@@ -2,18 +2,18 @@ package ru.practicum.ewm.explore.request.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.practicum.ewm.explore.enumerated.ParticipationStatus;
-import ru.practicum.ewm.explore.enumerated.StateAction;
+import ru.practicum.ewm.explore.enumerated.RequestStatus;
+import ru.practicum.ewm.explore.enumerated.StatusEvent;
 import ru.practicum.ewm.explore.event.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.ewm.explore.event.model.Event;
 import ru.practicum.ewm.explore.event.repository.EventRepository;
 import ru.practicum.ewm.explore.event.service.EventService;
 import ru.practicum.ewm.explore.exception.ConflictRequestException;
 import ru.practicum.ewm.explore.exception.NotFoundException;
-import ru.practicum.ewm.explore.request.dto.EventRequestStatusUpdateResult;
-import ru.practicum.ewm.explore.request.dto.ParticipationRequestDto;
+import ru.practicum.ewm.explore.request.dto.RequestDto;
+import ru.practicum.ewm.explore.request.dto.RequestStatusUpdate;
 import ru.practicum.ewm.explore.request.mapper.RequestMapper;
-import ru.practicum.ewm.explore.request.model.ParticipationRequest;
+import ru.practicum.ewm.explore.request.model.Request;
 import ru.practicum.ewm.explore.request.repository.RequestRepository;
 import ru.practicum.ewm.explore.user.model.User;
 import ru.practicum.ewm.explore.user.service.UserService;
@@ -22,9 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static ru.practicum.ewm.explore.enumerated.ParticipationStatus.CONFIRMED;
-import static ru.practicum.ewm.explore.enumerated.ParticipationStatus.REJECTED;
-
+import static ru.practicum.ewm.explore.enumerated.RequestStatus.CONFIRMED;
+import static ru.practicum.ewm.explore.enumerated.RequestStatus.REJECTED;
 
 @RequiredArgsConstructor
 @Service
@@ -35,93 +34,93 @@ public class RequestServiceImpl implements RequestService {
     private final EventRepository eventRepository;
 
     @Override
-    public List<ParticipationRequestDto> getUserEventRequests(Long userId, Long eventId) {
-        userService.getUserById(userId);
-        eventService.findEventById(eventId);
-        return requestRepository.findAllByEventId(eventId).stream()
-                .map(RequestMapper::requestToDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<ParticipationRequestDto> getUserRequests(Long userId) {
-        userService.getUserById(userId);
-        return requestRepository.findAllByRequester_Id(userId).stream()
-                .map(RequestMapper::requestToDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public ParticipationRequestDto addParticipationRequest(Long userId, Long eventId) {
-        User user = userService.getUserById(userId);
+    public RequestDto createRequest(Long userId, Long eventId) {
+        User user = userService.readUser(userId);
         Event event = eventService.findEventById(eventId);
-        if (!event.getState().equals(StateAction.PUBLISHED))
-            throw new ConflictRequestException("Participation in unpublished events is denied");
-        if (event.getInitiator().getId().equals(userId))
-            throw new ConflictRequestException(
-                    String.format("User id=%s is owner of event id=%s. Participation in your own events is denied",
-                            userId, eventId));
-        if (requestRepository.findAllByRequester_IdAndEvent_Id(userId, eventId).stream().findFirst().isPresent())
-            throw new ConflictRequestException(
-                    String.format("Request from user id=%s for event id=%s already exist.", userId, eventId));
+        if (!event.getState().equals(StatusEvent.PUBLISHED)) {
+            throw new ConflictRequestException("Участвовать в неопубликованных мероприятиях нельзя");
+        }
+        if (event.getInitiator().getId().equals(userId)) {
+            throw new ConflictRequestException("Быть участником собственных мероприятий нельзя");
+        }
+        if (requestRepository.findAllByRequesterIdAndEventId(userId, eventId).stream().findFirst().isPresent()) {
+            throw new ConflictRequestException("Запрос уже был отправлен");
+        }
         if (event.getParticipantLimit() != 0 &&
-                requestRepository.countConfirmedRequests(eventId, ParticipationStatus.CONFIRMED)
-                        >= event.getParticipantLimit())
-            throw new ConflictRequestException("The limit on the number of participants has been exceeded");
-        ParticipationRequest request = RequestMapper.getNewRequest(user, event);
-        if (event.getParticipantLimit() == 0)
-            request.setStatus(CONFIRMED);
-        if (!event.getRequestModeration()) {
+                requestRepository.countConfirmedRequests(eventId, RequestStatus.CONFIRMED)
+                        >= event.getParticipantLimit()) {
+            throw new ConflictRequestException("Был превышен лимит на количество участников");
+        }
+        Request request = RequestMapper.toRequest(user, event);
+        if (event.getParticipantLimit() == 0 || !event.getRequestModeration()) {
             request.setStatus(CONFIRMED);
         }
-        return RequestMapper.requestToDto(requestRepository.save(request));
+        return RequestMapper.toDto(requestRepository.save(request));
     }
 
     @Override
-    public ParticipationRequestDto cancelUserRequest(Long userId, Long requestId) {
-        userService.getUserById(userId);
-        ParticipationRequest request = getRequest(requestId);
-        request.setStatus(ParticipationStatus.CANCELED);
-        requestRepository.deleteById(requestId);
-        return RequestMapper.requestToDto(request);
+    public List<RequestDto> readUserRequests(Long userId, Long eventId) {
+        userService.readUser(userId);
+        eventService.findEventById(eventId);
+        return requestRepository.findAllByEventId(eventId).stream()
+                .map(RequestMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public EventRequestStatusUpdateResult updateRequest(Long userId, Long eventId, EventRequestStatusUpdateRequest eventDto) {
-        userService.getUserById(userId);
+    public List<RequestDto> readAllUserRequests(Long userId) {
+        userService.readUser(userId);
+        return requestRepository.findAllByRequesterId(userId).stream()
+                .map(RequestMapper::toDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public RequestStatusUpdate updateRequest(Long userId, Long eventId, EventRequestStatusUpdateRequest eventDto) {
+        userService.readUser(userId);
         Event event = eventService.findEventById(eventId);
-        List<ParticipationRequestDto> confirmedList = new ArrayList<>();
-        List<ParticipationRequestDto> rejectedList = new ArrayList<>();
-        EventRequestStatusUpdateResult updateResult = EventRequestStatusUpdateResult.builder()
-                .confirmedRequests(confirmedList)
-                .rejectedRequests(rejectedList)
+
+        RequestStatusUpdate updateResult = RequestStatusUpdate.builder()
+                .confirmedRequests(new ArrayList<>())
+                .rejectedRequests(new ArrayList<>())
                 .build();
+
         for (Long requestId : eventDto.getRequestIds()) {
-            ParticipationRequest request = getRequest(requestId);
-            if (request.getStatus().equals(CONFIRMED) && eventDto.getStatus().equals(REJECTED))
-                throw new ConflictRequestException("Request is already accepted");
+            Request request = pickRequest(requestId);
+            if (request.getStatus().equals(CONFIRMED) && eventDto.getStatus().equals(REJECTED)) {
+                throw new ConflictRequestException("Запрос уже одобрен");
+            }
             request.setStatus(eventDto.getStatus());
             if (eventDto.getStatus() == CONFIRMED) {
                 if (event.getConfirmedRequests() >= event.getParticipantLimit())
-                    throw new ConflictRequestException("Requests limit");
+                    throw new ConflictRequestException("Был превышен лимит на количество участников");
                 event.setConfirmedRequests(event.getConfirmedRequests() + 1);
                 eventRepository.save(event);
-                List<ParticipationRequestDto> requestDtos = updateResult.getConfirmedRequests();
-                requestDtos.add(RequestMapper.requestToDto(request));
-                updateResult.setConfirmedRequests(requestDtos);
+                List<RequestDto> requestDtoList = updateResult.getConfirmedRequests();
+                requestDtoList.add(RequestMapper.toDto(request));
+                updateResult.setConfirmedRequests(requestDtoList);
             } else if (eventDto.getStatus() == REJECTED) {
                 event.setConfirmedRequests(event.getConfirmedRequests() + 1);
                 eventRepository.save(event);
-                List<ParticipationRequestDto> requestDtos = updateResult.getRejectedRequests();
-                requestDtos.add(RequestMapper.requestToDto(request));
-                updateResult.setRejectedRequests(requestDtos);
+                List<RequestDto> requestDtoList = updateResult.getRejectedRequests();
+                requestDtoList.add(RequestMapper.toDto(request));
+                updateResult.setRejectedRequests(requestDtoList);
             }
         }
         return updateResult;
     }
 
-    private ParticipationRequest getRequest(Long reqId) {
-        return requestRepository.findById(reqId).orElseThrow(() -> new NotFoundException(
-                String.format("Request with id=%s was not found", reqId)));
+    @Override
+    public RequestDto deleteUserRequest(Long userId, Long requestId) {
+        userService.readUser(userId);
+        Request request = pickRequest(requestId);
+        request.setStatus(RequestStatus.CANCELED);
+        requestRepository.deleteById(requestId);
+        return RequestMapper.toDto(request);
+    }
+
+    private Request pickRequest(Long reqId) {
+        return requestRepository.findById(reqId).orElseThrow(
+                () -> new NotFoundException("Request с таким id не найден"));
     }
 }

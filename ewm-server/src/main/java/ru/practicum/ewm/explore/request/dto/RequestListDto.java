@@ -10,7 +10,7 @@ import java.util.List;
 @Getter
 @ToString
 @Builder
-public class ParticipationRequestDtoList {
-    private List<ParticipationRequestDto> confirmedRequests;
-    private List<ParticipationRequestDto> rejectedRequests;
+public class RequestListDto {
+    private List<RequestDto> confirmedRequests;
+    private List<RequestDto> rejectedRequests;
 }

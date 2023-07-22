@@ -1,6 +1,6 @@
 package ru.practicum.ewm.explore.enumerated;
 
-public enum ParticipationStatus {
+public enum RequestStatus {
     CONFIRMED,
     PENDING,
     CANCELED,

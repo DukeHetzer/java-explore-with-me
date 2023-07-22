@@ -26,11 +26,27 @@ public class CompilationServiceImpl implements CompilationService {
     private final EventRepository eventRepository;
 
     @Override
-    public Compilation create(UpdateCompilationDto body) {
+    public Compilation createCompilation(UpdateCompilationDto body) {
         List<Event> events = body.getEvents() == null ? Collections.emptyList() :
                 eventRepository.findEventsByIdIn(body.getEvents());
         return compilationRepository.save(
                 CompilationMapper.toCompilation(body, events));
+    }
+
+    @Override
+    public Compilation readCompilation(Long compilationId) {
+        try {
+            Compilation compilation = compilationRepository.findById(compilationId).orElseThrow(
+                    () -> new NotFoundException("Compilation с таким id не найден"));
+            compilation.setEvents(eventRepository.findEventsByIdIn(compilationRepository.getEventsByCompilation(compilationId + 1)));
+            return compilation;
+        } catch (NotFoundException exception) {
+            Compilation compilation = compilationRepository.findById(compilationId + 1).orElseThrow(
+                    () -> new NotFoundException("Compilation с таким id не найден"));
+            compilation.setEvents(eventRepository.findEventsByIdIn(compilationRepository.getEventsByCompilation(compilationId + 1)));
+
+            return compilation;
+        }
     }
 
     @Override
@@ -48,24 +64,10 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     @Override
-    public Compilation readById(Long compilationId) {
-        try {
-            Compilation compilation = compilationRepository.findById(compilationId).orElseThrow(
-                    () -> new NotFoundException("Compilation с таким id не найден"));
-            compilation.setEvents(eventRepository.findEventsByIdIn(compilationRepository.getEventsByCompilation(compilationId + 1)));
-            return compilation;
-        } catch (NotFoundException exception) {
-            Compilation compilation = compilationRepository.findById(compilationId + 1).orElseThrow(
-                    () -> new NotFoundException("Compilation с таким id не найден"));
-            compilation.setEvents(eventRepository.findEventsByIdIn(compilationRepository.getEventsByCompilation(compilationId + 1)));
-            return compilation;
-        }
-    }
-
-    @Override
-    public CompilationDto updateById(Long compilationId, UpdateCompilationDto body) {
+    public CompilationDto updateCompilation(Long compilationId, UpdateCompilationDto body) {
         List<Event> events = body.getEvents() == null ? Collections.emptyList() :
                 eventRepository.findEventsByIdIn(body.getEvents());
+
         return compilationRepository.findById(compilationId)
                 .map(compilation -> compilationRepository.save(CompilationMapper.toCompilation(body, events)))
                 .map(CompilationMapper::toDto)
@@ -73,7 +75,7 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     @Override
-    public void deleteById(Long compilationId) {
+    public void deleteCompilation(Long compilationId) {
         Compilation compilation = compilationRepository.findById(compilationId).orElseThrow(
                 () -> new NotFoundException("Compilation с таким id не найден"));
         if (!compilation.getEvents().isEmpty()) {

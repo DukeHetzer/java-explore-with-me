@@ -20,18 +20,18 @@ public class AdminCompilationController {
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
     public Compilation createCompilation(@RequestBody @Valid UpdateCompilationDto compilationDto) {
-        return service.create(compilationDto);
+        return service.createCompilation(compilationDto);
     }
 
     @PatchMapping("/{compId}")
     public CompilationDto updateCompilation(@PathVariable Long compId,
                                             @RequestBody UpdateCompilationDto compilationDto) {
-        return service.updateById(compId, compilationDto);
+        return service.updateCompilation(compId, compilationDto);
     }
 
     @DeleteMapping("/{compId}")
     public ResponseEntity<Object> deleteCompilation(@PathVariable Long compId) {
-        service.deleteById(compId);
+        service.deleteCompilation(compId);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

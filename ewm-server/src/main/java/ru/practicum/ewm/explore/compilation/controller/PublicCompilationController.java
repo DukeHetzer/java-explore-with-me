@@ -22,7 +22,7 @@ public class PublicCompilationController {
     }
 
     @GetMapping("/{compId}")
-    public Compilation readCompilationById(@PathVariable Long compId) {
-        return service.readById(compId);
+    public Compilation readCompilation(@PathVariable Long compId) {
+        return service.readCompilation(compId);
     }
 }

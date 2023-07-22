@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
 import ru.practicum.ewm.explore.category.dto.CategoryDto;
-import ru.practicum.ewm.explore.enumerated.StateAction;
+import ru.practicum.ewm.explore.enumerated.StatusEvent;
 import ru.practicum.ewm.explore.event.model.Location;
 import ru.practicum.ewm.explore.user.dto.UserShortDto;
 
@@ -25,7 +25,7 @@ public class EventFullDto {
     private String annotation;
     private Long confirmedRequests;
     private String description;
-    private StateAction state;
+    private StatusEvent state;
     private String title;
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdOn;

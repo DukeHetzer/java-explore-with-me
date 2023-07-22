@@ -6,12 +6,12 @@ import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Size;
 
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Setter
-@Getter
 @ToString
-@Builder
+@Getter
+@Setter
 public class UserIncomeDto {
     @NotBlank
     @Size(min = 2, max = 250)

@@ -1,6 +1,6 @@
 package ru.practicum.ewm.explore.enumerated;
 
-public enum StateAction {
+public enum StatusEvent {
     PUBLISH_EVENT,
     REJECT_EVENT,
     PENDING,

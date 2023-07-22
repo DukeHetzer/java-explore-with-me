@@ -16,14 +16,14 @@ public class PublicCategoryController {
     private final CategoryService service;
 
     @GetMapping
-    public List<Category> getAllCategories(@RequestParam(defaultValue = "0") Integer from,
-                                           @RequestParam(defaultValue = "10") Integer size) {
+    public List<Category> readAllCategories(@RequestParam(defaultValue = "0") Integer from,
+                                            @RequestParam(defaultValue = "10") Integer size) {
         return service.readAllCategories(from, size);
     }
 
     @GetMapping("/{catId}")
-    public CategoryDto getCategoryById(@PathVariable Long catId) {
-        Category category = service.readById(catId);
+    public CategoryDto readCategory(@PathVariable Long catId) {
+        Category category = service.readCategory(catId);
         return CategoryMapper.toDto(category);
     }
 }

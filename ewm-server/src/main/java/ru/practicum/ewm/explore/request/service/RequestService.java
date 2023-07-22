@@ -1,20 +1,19 @@
 package ru.practicum.ewm.explore.request.service;
 
 import ru.practicum.ewm.explore.event.dto.EventRequestStatusUpdateRequest;
-import ru.practicum.ewm.explore.request.dto.EventRequestStatusUpdateResult;
-import ru.practicum.ewm.explore.request.dto.ParticipationRequestDto;
+import ru.practicum.ewm.explore.request.dto.RequestDto;
+import ru.practicum.ewm.explore.request.dto.RequestStatusUpdate;
 
 import java.util.List;
 
 public interface RequestService {
+    RequestDto createRequest(Long userId, Long eventId);
 
-    List<ParticipationRequestDto> getUserEventRequests(Long userId, Long eventId);
+    List<RequestDto> readUserRequests(Long userId, Long eventId);
 
-    List<ParticipationRequestDto> getUserRequests(Long userId);
+    List<RequestDto> readAllUserRequests(Long userId);
 
-    ParticipationRequestDto addParticipationRequest(Long userId, Long eventId);
+    RequestStatusUpdate updateRequest(Long userId, Long requestId, EventRequestStatusUpdateRequest eventDto);
 
-    EventRequestStatusUpdateResult updateRequest(Long userId, Long requestId, EventRequestStatusUpdateRequest eventDto);
-
-    ParticipationRequestDto cancelUserRequest(Long userId, Long requestId);
+    RequestDto deleteUserRequest(Long userId, Long requestId);
 }

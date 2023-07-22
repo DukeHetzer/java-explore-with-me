@@ -7,13 +7,13 @@ import ru.practicum.ewm.explore.category.model.Category;
 import java.util.List;
 
 public interface CategoryService {
-    CategoryDto create(NewCategoryDto body);
+    CategoryDto createCategory(NewCategoryDto body);
+
+    Category readCategory(Long catId);
 
     List<Category> readAllCategories(Integer from, Integer size);
 
-    Category readById(Long catId);
+    CategoryDto updateCategory(Long categoryId, CategoryDto body);
 
-    CategoryDto update(Long categoryId, CategoryDto body);
-
-    void deleteById(Long catId);
+    void deleteCategory(Long catId);
 }
