@@ -8,7 +8,7 @@ import ru.practicum.ewm.explore.event.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.ewm.explore.event.model.Event;
 import ru.practicum.ewm.explore.event.repository.EventRepository;
 import ru.practicum.ewm.explore.event.service.EventService;
-import ru.practicum.ewm.explore.exception.ConflictRequestException;
+import ru.practicum.ewm.explore.exception.ConflictException;
 import ru.practicum.ewm.explore.exception.NotFoundException;
 import ru.practicum.ewm.explore.request.dto.RequestDto;
 import ru.practicum.ewm.explore.request.dto.RequestStatusUpdate;
@@ -38,18 +38,18 @@ public class RequestServiceImpl implements RequestService {
         User user = userService.readUser(userId);
         Event event = eventService.findEventById(eventId);
         if (!event.getState().equals(StatusEvent.PUBLISHED)) {
-            throw new ConflictRequestException("Участвовать в неопубликованных мероприятиях нельзя");
+            throw new ConflictException("Участвовать в неопубликованных мероприятиях нельзя");
         }
         if (event.getInitiator().getId().equals(userId)) {
-            throw new ConflictRequestException("Быть участником собственных мероприятий нельзя");
+            throw new ConflictException("Быть участником собственных мероприятий нельзя");
         }
         if (requestRepository.findAllByRequesterIdAndEventId(userId, eventId).stream().findFirst().isPresent()) {
-            throw new ConflictRequestException("Запрос уже был отправлен");
+            throw new ConflictException("Запрос уже был отправлен");
         }
         if (event.getParticipantLimit() != 0 &&
                 requestRepository.countConfirmedRequests(eventId, RequestStatus.CONFIRMED)
                         >= event.getParticipantLimit()) {
-            throw new ConflictRequestException("Был превышен лимит на количество участников");
+            throw new ConflictException("Был превышен лимит на количество участников");
         }
         Request request = RequestMapper.toRequest(user, event);
         if (event.getParticipantLimit() == 0 || !event.getRequestModeration()) {
@@ -88,12 +88,12 @@ public class RequestServiceImpl implements RequestService {
         for (Long requestId : eventDto.getRequestIds()) {
             Request request = pickRequest(requestId);
             if (request.getStatus().equals(CONFIRMED) && eventDto.getStatus().equals(REJECTED)) {
-                throw new ConflictRequestException("Запрос уже одобрен");
+                throw new ConflictException("Запрос уже одобрен");
             }
             request.setStatus(eventDto.getStatus());
             if (eventDto.getStatus() == CONFIRMED) {
                 if (event.getConfirmedRequests() >= event.getParticipantLimit())
-                    throw new ConflictRequestException("Был превышен лимит на количество участников");
+                    throw new ConflictException("Был превышен лимит на количество участников");
                 event.setConfirmedRequests(event.getConfirmedRequests() + 1);
                 eventRepository.save(event);
                 List<RequestDto> requestDtoList = updateResult.getConfirmedRequests();

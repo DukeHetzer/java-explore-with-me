@@ -11,7 +11,7 @@ import ru.practicum.ewm.explore.compilation.model.Compilation;
 import ru.practicum.ewm.explore.compilation.repository.CompilationRepository;
 import ru.practicum.ewm.explore.event.model.Event;
 import ru.practicum.ewm.explore.event.repository.EventRepository;
-import ru.practicum.ewm.explore.exception.ConditionsNotMetException;
+import ru.practicum.ewm.explore.exception.ConditionException;
 import ru.practicum.ewm.explore.exception.NotFoundException;
 
 import java.util.Collections;
@@ -79,7 +79,7 @@ public class CompilationServiceImpl implements CompilationService {
         Compilation compilation = compilationRepository.findById(compilationId).orElseThrow(
                 () -> new NotFoundException("Compilation с таким id не найден"));
         if (!compilation.getEvents().isEmpty()) {
-            throw new ConditionsNotMetException("Compilation содержит события");
+            throw new ConditionException("Compilation содержит события");
         }
         compilationRepository.deleteById(compilation.getId());
     }

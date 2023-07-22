@@ -20,8 +20,8 @@ import ru.practicum.ewm.explore.event.model.Location;
 import ru.practicum.ewm.explore.event.repository.EventRepository;
 import ru.practicum.ewm.explore.event.repository.LocationRepository;
 import ru.practicum.ewm.explore.exception.BadRequestException;
-import ru.practicum.ewm.explore.exception.ConflictRequestException;
-import ru.practicum.ewm.explore.exception.NotAllowedException;
+import ru.practicum.ewm.explore.exception.ConflictException;
+import ru.practicum.ewm.explore.exception.HasNoAccessException;
 import ru.practicum.ewm.explore.exception.NotFoundException;
 import ru.practicum.ewm.explore.request.repository.RequestRepository;
 import ru.practicum.ewm.explore.user.service.UserService;
@@ -137,7 +137,7 @@ public class EventServiceImpl implements EventService {
         userService.readUser(userId);
         Event event = findEventById(eventId);
         if (!event.getInitiator().getId().equals(userId)) {
-            throw new NotAllowedException("User не является основателем этого события");
+            throw new HasNoAccessException("User не является основателем этого события");
         }
         return findEventById(eventId);
     }
@@ -179,16 +179,16 @@ public class EventServiceImpl implements EventService {
         Optional.ofNullable(body.getStateAction())
                 .ifPresent(stateAction -> {
                     if (event.getState().equals(StatusEvent.PUBLISHED) && stateAction.equals(StatusEvent.REJECT_EVENT)) {
-                        throw new ConflictRequestException("Событие уже опубликовано");
+                        throw new ConflictException("Событие уже опубликовано");
                     }
                     if (event.getState().equals(StatusEvent.PUBLISHED) && stateAction.equals(StatusEvent.PUBLISH_EVENT)) {
-                        throw new ConflictRequestException("Событие уже опубликовано");
+                        throw new ConflictException("Событие уже опубликовано");
                     }
                     if (event.getState().equals(StatusEvent.REJECTED) && stateAction.equals(StatusEvent.PUBLISH_EVENT)) {
-                        throw new ConflictRequestException("Событие уже опубликовано");
+                        throw new ConflictException("Событие уже опубликовано");
                     }
                     if (event.getState().equals(StatusEvent.PUBLISH_EVENT) && stateAction.equals(StatusEvent.PUBLISHED)) {
-                        throw new ConflictRequestException("Событие уже опубликовано");
+                        throw new ConflictException("Событие уже опубликовано");
                     }
 
                     if (stateAction.equals(StatusEvent.SEND_TO_REVIEW)) {
@@ -212,10 +212,10 @@ public class EventServiceImpl implements EventService {
     public Event updateUserEvent(Long eventId, Long userId, UpdateEventUserRequest eventDto) {
         Event event = findEventById(eventId);
         if (event.getState() != null && event.getState().equals(StatusEvent.PUBLISHED)) {
-            throw new ConflictRequestException("Событие уже опубликовано");
+            throw new ConflictException("Событие уже опубликовано");
         }
         if (eventDto.getStateAction() != null && eventDto.getStateAction().equals(StatusEvent.PUBLISHED)) {
-            throw new ConflictRequestException("Событие уже опубликовано");
+            throw new ConflictException("Событие уже опубликовано");
         }
         if (eventDto.getStateAction() != null && eventDto.getStateAction().equals(StatusEvent.CANCEL_REVIEW)) {
             event.setState(StatusEvent.CANCELED);

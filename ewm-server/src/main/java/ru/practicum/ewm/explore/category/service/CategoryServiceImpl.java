@@ -10,7 +10,7 @@ import ru.practicum.ewm.explore.category.dto.NewCategoryDto;
 import ru.practicum.ewm.explore.category.model.Category;
 import ru.practicum.ewm.explore.category.repository.CategoryRepository;
 import ru.practicum.ewm.explore.event.repository.EventRepository;
-import ru.practicum.ewm.explore.exception.ConflictRequestException;
+import ru.practicum.ewm.explore.exception.ConflictException;
 import ru.practicum.ewm.explore.exception.NotFoundException;
 
 import java.util.List;
@@ -55,6 +55,6 @@ public class CategoryServiceImpl implements CategoryService {
         if (categoryRepository.existsById(catId) && eventRepository.findEventsByCategoryId(catId).stream().findAny().isEmpty()) {
             categoryRepository.deleteById(catId);
         } else
-            throw new ConflictRequestException("Category с таким id не существует");
+            throw new ConflictException("Category с таким id не существует");
     }
 }

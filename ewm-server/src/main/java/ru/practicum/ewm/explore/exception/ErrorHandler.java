@@ -18,33 +18,32 @@ import javax.xml.bind.ValidationException;
 @Slf4j
 @RestControllerAdvice("ru.practicum.ewm")
 public class ErrorHandler {
-    @ExceptionHandler({ValidationException.class, ConstraintViolationException.class,
-            MissingServletRequestParameterException.class, DuplicateKeyException.class,
-            BadRequestException.class, MethodArgumentNotValidException.class})
+    @ExceptionHandler({BadRequestException.class, ConstraintViolationException.class, DuplicateKeyException.class,
+            MethodArgumentNotValidException.class, MissingServletRequestParameterException.class, ValidationException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ErrorResponse illegalArgumentExceptionHandler(Exception e) {
+    public ErrorResponse illegalArgumentHandler(Exception e) {
         log.error(e.getMessage());
         return new ErrorResponse(e.getMessage());
     }
 
-    @ExceptionHandler({NullPointerException.class, NotFoundException.class})
+    @ExceptionHandler({NotFoundException.class, NullPointerException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ErrorResponse entityNotFoundExceptionHandler(Exception e) {
+    public ErrorResponse notFoundHandler(Exception e) {
         log.warn(e.getMessage());
         return new ErrorResponse(e.getMessage());
     }
 
-    @ExceptionHandler({NotAllowedException.class, ConditionsNotMetException.class, IllegalStateException.class})
+    @ExceptionHandler({ConditionException.class, HasNoAccessException.class, IllegalStateException.class})
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ErrorResponse notAllowedExceptionHandler(Exception e) {
+    public ErrorResponse notAllowedHandler(Exception e) {
         log.warn(e.getMessage());
         return new ErrorResponse(e.getMessage());
     }
 
-    @ExceptionHandler({HttpMessageNotReadableException.class, HttpClientErrorException.Conflict.class,
-            DataIntegrityViolationException.class, ConflictRequestException.class})
+    @ExceptionHandler({ConflictException.class, DataIntegrityViolationException.class,
+            HttpClientErrorException.Conflict.class, HttpMessageNotReadableException.class})
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ErrorResponse conditionsNotMetExceptionHandler(Exception e) {
+    public ErrorResponse conditionsNotMetHandler(Exception e) {
         log.warn(e.getMessage());
         return new ErrorResponse(e.getMessage());
     }
