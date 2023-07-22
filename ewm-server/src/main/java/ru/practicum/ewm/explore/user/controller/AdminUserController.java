@@ -3,12 +3,10 @@ package ru.practicum.ewm.explore.user.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.explore.user.dto.UserDto;
 import ru.practicum.ewm.explore.user.dto.UserIncomeDto;
 import ru.practicum.ewm.explore.user.service.UserService;
-import ru.practicum.ewm.explore.util.OnCreate;
 
 import javax.validation.Valid;
 import java.util.List;
@@ -20,7 +18,6 @@ public class AdminUserController {
     private final UserService service;
 
     @ResponseStatus(HttpStatus.CREATED)
-    @Validated({OnCreate.class})
     @PostMapping
     public UserDto createUser(@RequestBody @Valid UserIncomeDto body) {
         return service.createUser(body);

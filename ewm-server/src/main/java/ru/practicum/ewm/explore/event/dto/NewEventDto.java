@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
 import lombok.extern.jackson.Jacksonized;
 import ru.practicum.ewm.explore.event.model.Location;
-import ru.practicum.ewm.explore.util.OnCreate;
-import ru.practicum.ewm.explore.util.OnUpdate;
 
 import javax.validation.constraints.*;
 import java.time.LocalDateTime;
@@ -18,26 +16,26 @@ import java.time.LocalDateTime;
 @Getter
 @Jacksonized
 public class NewEventDto {
-    @Positive(groups = {OnUpdate.class})
+    @Positive
     private Long id;
-    @NotNull(groups = {OnUpdate.class, OnCreate.class})
+    @NotNull
     private Long category;
-    @NotNull(groups = {OnCreate.class})
+    @NotNull
     private Location location;
-    @NotNull(groups = {OnUpdate.class, OnCreate.class})
+    @NotNull
     @Size(min = 20, max = 2000)
     private String annotation;
-    @NotNull(groups = {OnUpdate.class, OnCreate.class})
+    @NotNull
     @Size(min = 20, max = 7000)
     private String description;
-    @NotNull(groups = {OnUpdate.class, OnCreate.class})
+    @NotNull
     @Size(min = 3, max = 120)
     private String title;
-    @Future(groups = {OnUpdate.class, OnCreate.class})
+    @Future
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
     private Boolean paid;
-    @PositiveOrZero(groups = {OnUpdate.class, OnCreate.class})
+    @PositiveOrZero
     private Integer participantLimit;
     private Boolean requestModeration;
 }

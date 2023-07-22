@@ -2,19 +2,16 @@ package ru.practicum.ewm.explore.event.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.explore.enumerated.StatusEvent;
 import ru.practicum.ewm.explore.event.dto.UpdateEventUserRequest;
 import ru.practicum.ewm.explore.event.model.Event;
 import ru.practicum.ewm.explore.event.service.EventService;
-import ru.practicum.ewm.explore.util.OnCreate;
-import ru.practicum.ewm.explore.util.OnUpdate;
 
+import javax.validation.Valid;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Validated
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/admin/events")
@@ -35,10 +32,9 @@ public class AdminEventController {
         return service.searchEvents(users, states, categories, rangeStart, rangeEnd, from, size);
     }
 
-    @Validated({OnCreate.class, OnUpdate.class})
     @PatchMapping("/{eventId}")
     public Event updateAdminEvent(@PathVariable Long eventId,
-                                  @RequestBody @Validated UpdateEventUserRequest body) {
+                                  @RequestBody @Valid UpdateEventUserRequest body) {
         return service.updateEventByAdmin(eventId, body);
     }
 }

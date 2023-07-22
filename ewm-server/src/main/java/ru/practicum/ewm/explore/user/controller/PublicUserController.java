@@ -2,7 +2,6 @@ package ru.practicum.ewm.explore.user.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.explore.event.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.ewm.explore.event.dto.EventShortDto;
@@ -13,12 +12,10 @@ import ru.practicum.ewm.explore.event.service.EventService;
 import ru.practicum.ewm.explore.request.dto.RequestDto;
 import ru.practicum.ewm.explore.request.dto.RequestStatusUpdate;
 import ru.practicum.ewm.explore.request.service.RequestService;
-import ru.practicum.ewm.explore.util.OnCreate;
 
 import javax.validation.Valid;
 import java.util.List;
 
-@Validated
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/users/{userId}")
@@ -27,7 +24,6 @@ public class PublicUserController {
     private final RequestService requestService;
 
     @ResponseStatus(HttpStatus.CREATED)
-    @Validated({OnCreate.class})
     @PostMapping("/events")
     public Event createUserEvent(@PathVariable Long userId,
                                  @RequestBody @Valid NewEventDto event) {
@@ -35,7 +31,6 @@ public class PublicUserController {
     }
 
     @ResponseStatus(HttpStatus.CREATED)
-    @Validated({OnCreate.class})
     @PostMapping("/requests")
     public RequestDto createUserRequest(@PathVariable Long userId,
                                         @RequestParam Long eventId) {
@@ -80,7 +75,6 @@ public class PublicUserController {
         return requestService.updateRequest(userId, eventId, eventBody);
     }
 
-    @Validated({OnCreate.class})
     @PatchMapping("/requests/{requestId}/cancel")
     public RequestDto deleteUserEvent(@PathVariable Long userId,
                                       @PathVariable Long requestId) {
