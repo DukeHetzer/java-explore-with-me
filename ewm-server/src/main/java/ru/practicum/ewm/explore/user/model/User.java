@@ -13,7 +13,6 @@ import javax.validation.constraints.Size;
 @ToString
 @Getter
 @Setter
-@EqualsAndHashCode(of = "id")
 @Table(name = "users")
 public class User {
     @Id

@@ -1,5 +1,6 @@
 package ru.practicum.ewm.explore.event.mapper;
 
+import lombok.experimental.UtilityClass;
 import ru.practicum.ewm.explore.category.mapper.CategoryMapper;
 import ru.practicum.ewm.explore.category.model.Category;
 import ru.practicum.ewm.explore.enumerated.StatusEvent;
@@ -11,6 +12,7 @@ import ru.practicum.ewm.explore.user.model.User;
 
 import java.time.LocalDateTime;
 
+@UtilityClass
 public class EventMapper {
     public static EventShortDto toDto(Event event) {
         return EventShortDto.builder()

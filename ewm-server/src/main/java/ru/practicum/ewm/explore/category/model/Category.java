@@ -12,7 +12,6 @@ import javax.validation.constraints.Size;
 @ToString
 @Getter
 @Setter
-@EqualsAndHashCode
 @Table(name = "categories")
 public class Category {
     @Id

@@ -31,7 +31,7 @@ public class StatsServiceImpl implements StatsService {
         EndpointHit endpointHit = EndpointHitMapper.toHit(endpointHitDto);
         repository.save(endpointHit);
 
-        log.info("EndpointHit успешно создан");
+        log.info(endpointHit + " создан");
         return endpointHit;
     }
 

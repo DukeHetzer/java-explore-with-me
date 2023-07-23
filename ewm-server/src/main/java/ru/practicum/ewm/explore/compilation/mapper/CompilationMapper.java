@@ -1,5 +1,6 @@
 package ru.practicum.ewm.explore.compilation.mapper;
 
+import lombok.experimental.UtilityClass;
 import ru.practicum.ewm.explore.compilation.dto.CompilationDto;
 import ru.practicum.ewm.explore.compilation.dto.UpdateCompilationDto;
 import ru.practicum.ewm.explore.compilation.model.Compilation;
@@ -9,6 +10,7 @@ import ru.practicum.ewm.explore.event.model.Event;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@UtilityClass
 public class CompilationMapper {
     public static CompilationDto toDto(Compilation compilation) {
         return CompilationDto.builder()

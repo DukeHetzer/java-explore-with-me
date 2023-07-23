@@ -28,13 +28,15 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryDto createCategory(NewCategoryDto body) {
-        return toDto(categoryRepository.save(toCategory(body)));
+        Category category = categoryRepository.save(toCategory(body));
+        log.info(category + " создана");
+        return toDto(category);
     }
 
     @Override
     public Category readCategory(Long catId) {
         return categoryRepository.findById(catId).orElseThrow(
-                () -> new NotFoundException("Category с таким id не найдена"));
+                () -> new NotFoundException("Category с id=" + catId + " не найдена"));
     }
 
     @Override
@@ -47,14 +49,18 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto updateCategory(Long categoryId, CategoryDto body) {
         Category category = readCategory(categoryId);
         category.setName(body.getName());
-        return toDto(categoryRepository.save(category));
+        Category categoryUpdated = categoryRepository.save(category);
+
+        log.info(categoryUpdated + " обновлена");
+        return toDto(categoryUpdated);
     }
 
     @Override
     public void deleteCategory(Long catId) {
         if (categoryRepository.existsById(catId) && eventRepository.findEventsByCategoryId(catId).stream().findAny().isEmpty()) {
             categoryRepository.deleteById(catId);
+            log.info("Category с id={} удалена", catId);
         } else
-            throw new ConflictException("Category с таким id не существует");
+            throw new ConflictException("Category с id=" + catId + " не существует");
     }
 }

@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 @ToString
 @Getter
 @Setter
-@EqualsAndHashCode(of = "id")
 @Table(name = "events")
 public class Event {
     @Id

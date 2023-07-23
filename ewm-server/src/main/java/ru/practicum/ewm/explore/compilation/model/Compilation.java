@@ -15,7 +15,6 @@ import java.util.List;
 @ToString
 @Getter
 @Setter
-@EqualsAndHashCode
 @Table(name = "compilations")
 public class Compilation {
     @Id

@@ -1,6 +1,7 @@
 package ru.practicum.ewm.explore.user.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 import static ru.practicum.ewm.explore.user.mapper.UserMapper.toUser;
 
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class UserServiceImpl implements UserService {
@@ -26,13 +28,16 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto createUser(UserIncomeDto body) {
         checkEmail(body);
-        return UserMapper.toDto(userRepository.save(toUser(body)));
+        User user = userRepository.save(toUser(body));
+
+        log.info(user + " создан");
+        return UserMapper.toDto(user);
     }
 
     @Override
     public User readUser(Long userId) {
         return userRepository.findById(userId).orElseThrow(
-                () -> new NotFoundException("User с таким id не найден"));
+                () -> new NotFoundException("User с id=" + userId + " не найден"));
     }
 
     @Override
@@ -52,6 +57,7 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(Long userId) {
         readUser(userId);
         userRepository.deleteById(userId);
+        log.info("User с id={} удален", userId);
     }
 
     private void checkEmail(UserIncomeDto body) {

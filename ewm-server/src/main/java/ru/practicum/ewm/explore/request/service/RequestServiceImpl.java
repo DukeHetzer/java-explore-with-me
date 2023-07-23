@@ -1,6 +1,7 @@
 package ru.practicum.ewm.explore.request.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.ewm.explore.enumerated.RequestStatus;
 import ru.practicum.ewm.explore.enumerated.StatusEvent;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 import static ru.practicum.ewm.explore.enumerated.RequestStatus.CONFIRMED;
 import static ru.practicum.ewm.explore.enumerated.RequestStatus.REJECTED;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class RequestServiceImpl implements RequestService {
@@ -49,13 +51,16 @@ public class RequestServiceImpl implements RequestService {
         if (event.getParticipantLimit() != 0 &&
                 requestRepository.countConfirmedRequests(eventId, RequestStatus.CONFIRMED)
                         >= event.getParticipantLimit()) {
-            throw new ConflictException("Был превышен лимит на количество участников");
+            throw new ConflictException("Превышен лимит на количество участников");
         }
         Request request = RequestMapper.toRequest(user, event);
         if (event.getParticipantLimit() == 0 || !event.getRequestModeration()) {
             request.setStatus(CONFIRMED);
         }
-        return RequestMapper.toDto(requestRepository.save(request));
+        Request requestCreated = requestRepository.save(request);
+
+        log.info(requestCreated + " создан");
+        return RequestMapper.toDto(requestCreated);
     }
 
     @Override
@@ -80,7 +85,7 @@ public class RequestServiceImpl implements RequestService {
         userService.readUser(userId);
         Event event = eventService.findEventById(eventId);
 
-        RequestStatusUpdate updateResult = RequestStatusUpdate.builder()
+        RequestStatusUpdate requestUpdated = RequestStatusUpdate.builder()
                 .confirmedRequests(new ArrayList<>())
                 .rejectedRequests(new ArrayList<>())
                 .build();
@@ -93,21 +98,22 @@ public class RequestServiceImpl implements RequestService {
             request.setStatus(eventDto.getStatus());
             if (eventDto.getStatus() == CONFIRMED) {
                 if (event.getConfirmedRequests() >= event.getParticipantLimit())
-                    throw new ConflictException("Был превышен лимит на количество участников");
+                    throw new ConflictException("Превышен лимит на количество участников");
                 event.setConfirmedRequests(event.getConfirmedRequests() + 1);
                 eventRepository.save(event);
-                List<RequestDto> requestDtoList = updateResult.getConfirmedRequests();
+                List<RequestDto> requestDtoList = requestUpdated.getConfirmedRequests();
                 requestDtoList.add(RequestMapper.toDto(request));
-                updateResult.setConfirmedRequests(requestDtoList);
+                requestUpdated.setConfirmedRequests(requestDtoList);
             } else if (eventDto.getStatus() == REJECTED) {
                 event.setConfirmedRequests(event.getConfirmedRequests() + 1);
                 eventRepository.save(event);
-                List<RequestDto> requestDtoList = updateResult.getRejectedRequests();
+                List<RequestDto> requestDtoList = requestUpdated.getRejectedRequests();
                 requestDtoList.add(RequestMapper.toDto(request));
-                updateResult.setRejectedRequests(requestDtoList);
+                requestUpdated.setRejectedRequests(requestDtoList);
             }
         }
-        return updateResult;
+        log.info(requestUpdated + " обновлен");
+        return requestUpdated;
     }
 
     @Override
@@ -116,11 +122,13 @@ public class RequestServiceImpl implements RequestService {
         Request request = pickRequest(requestId);
         request.setStatus(RequestStatus.CANCELED);
         requestRepository.deleteById(requestId);
+
+        log.info("Request с id={} удален", requestId);
         return RequestMapper.toDto(request);
     }
 
     private Request pickRequest(Long reqId) {
         return requestRepository.findById(reqId).orElseThrow(
-                () -> new NotFoundException("Request с таким id не найден"));
+                () -> new NotFoundException("Request с id=" + reqId + " не найден"));
     }
 }

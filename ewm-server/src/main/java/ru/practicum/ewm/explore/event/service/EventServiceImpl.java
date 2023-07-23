@@ -2,6 +2,7 @@ package ru.practicum.ewm.explore.event.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -38,6 +39,7 @@ import static org.springframework.data.jpa.domain.Specification.where;
 import static ru.practicum.ewm.explore.event.mapper.EventMapper.toEvent;
 import static ru.practicum.ewm.explore.event.mapper.LocationMapper.toLocation;
 
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 @Service
@@ -64,16 +66,19 @@ public class EventServiceImpl implements EventService {
         }
         eventDto.setLocation(locationRepository.save(location));
 
-        return eventRepository.save(toEvent(eventDto,
+        Event event = eventRepository.save(toEvent(eventDto,
                 categoryService.readCategory(eventDto.getCategory()),
                 userService.readUser(userId)));
+
+        log.info(event + " создано");
+        return event;
     }
 
     @Override
     public Event readEvent(Long id) {
         Event event = findEventById(id);
         if (!event.getState().equals(StatusEvent.PUBLISHED)) {
-            throw new NotFoundException("Event с таким id не найден");
+            throw new NotFoundException("Event с id=" + id + " не найден");
         }
         Long requestCounts = requestRepository.countConfirmedRequests(id, RequestStatus.CONFIRMED);
         event.setConfirmedRequests(requestCounts);
@@ -137,7 +142,7 @@ public class EventServiceImpl implements EventService {
         userService.readUser(userId);
         Event event = findEventById(eventId);
         if (!event.getInitiator().getId().equals(userId)) {
-            throw new HasNoAccessException("User не является основателем этого события");
+            throw new HasNoAccessException("User с id=" + userId + " не является основателем события с id=" + eventId);
         }
         return findEventById(eventId);
     }
@@ -204,7 +209,10 @@ public class EventServiceImpl implements EventService {
                         event.setState(StatusEvent.PUBLISHED);
                     }
                 });
-        return eventRepository.save(event);
+        Event eventUpdated = eventRepository.save(event);
+
+        log.info(eventUpdated + " обновлено");
+        return eventUpdated;
     }
 
     @Override
@@ -249,7 +257,7 @@ public class EventServiceImpl implements EventService {
     @Override
     public Event findEventById(Long eventId) {
         return eventRepository.findById(eventId).orElseThrow(
-                () -> new NotFoundException("Event с таким id не найден"));
+                () -> new NotFoundException("Event с id=" + eventId + " не найден"));
     }
 
     private Specification<Event> textPredicate(String text) {
