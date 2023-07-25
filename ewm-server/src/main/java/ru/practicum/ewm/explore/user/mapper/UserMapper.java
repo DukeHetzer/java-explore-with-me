@@ -25,8 +25,8 @@ public class UserMapper {
 
     public static User toUser(UserIncomeDto body) {
         return User.builder()
-                .name(body.getName())
                 .email(body.getEmail())
+                .name(body.getName())
                 .build();
     }
 }

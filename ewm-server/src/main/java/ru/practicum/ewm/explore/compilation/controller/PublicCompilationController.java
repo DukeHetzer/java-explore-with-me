@@ -14,15 +14,15 @@ import java.util.List;
 public class PublicCompilationController {
     private final CompilationService service;
 
-    @GetMapping
-    public List<CompilationDto> readCompilations(@RequestParam(required = false) Boolean pinned,
-                                                @RequestParam(defaultValue = "0") Integer from,
-                                                @RequestParam(defaultValue = "10") Integer size) {
-        return service.readAllCompilations(pinned, from, size);
-    }
-
     @GetMapping("/{compId}")
     public Compilation readCompilation(@PathVariable Long compId) {
         return service.readCompilation(compId);
+    }
+
+    @GetMapping
+    public List<CompilationDto> readCompilations(@RequestParam(required = false) Boolean pinned,
+                                                 @RequestParam(defaultValue = "0") Integer from,
+                                                 @RequestParam(defaultValue = "10") Integer size) {
+        return service.readAllCompilations(pinned, from, size);
     }
 }

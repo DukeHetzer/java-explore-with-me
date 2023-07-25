@@ -26,7 +26,7 @@ public class Compilation {
     @Column(name = "title")
     @Size(min = 3, max = 50)
     private String title;
-    @ManyToMany(cascade = CascadeType.ALL)
+    @ManyToMany
     @JoinTable(name = "compilation_event",
             joinColumns = @JoinColumn(name = "compilation_id"),
             inverseJoinColumns = @JoinColumn(name = "event_id"))

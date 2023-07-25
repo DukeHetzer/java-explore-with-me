@@ -23,10 +23,10 @@ public class CompilationMapper {
                 .build();
     }
 
-    public static Compilation toCompilation(UpdateCompilationDto body, List<Event> events) {
+    public static Compilation toCompilation(UpdateCompilationDto dto, List<Event> events) {
         return Compilation.builder()
-                .pinned(body.getPinned())
-                .title(body.getTitle())
+                .pinned(dto.getPinned())
+                .title(dto.getTitle())
                 .events(events)
                 .build();
     }

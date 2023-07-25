@@ -6,9 +6,11 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import ru.practicum.ewm.explore.category.dto.CategoryDto;
+import ru.practicum.ewm.explore.comments.model.Comment;
 import ru.practicum.ewm.explore.user.dto.UserShortDto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Setter
 @Getter
@@ -21,8 +23,9 @@ public class EventShortDto {
     private String annotation;
     private Long confirmedRequests;
     private String title;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
     private Boolean paid;
     private Long views;
+    private List<Comment> comments;
 }

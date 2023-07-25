@@ -20,12 +20,12 @@ public class User {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "email", nullable = false, unique = true)
+    @Column(name = "email")
     @Email
     @Size(min = 6, max = 254)
     private String email;
 
-    @Column(name = "name", nullable = false)
+    @Column(name = "name")
     @Size(min = 2, max = 250)
     private String name;
 }

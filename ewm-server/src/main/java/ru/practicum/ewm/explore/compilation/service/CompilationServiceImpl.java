@@ -28,10 +28,10 @@ public class CompilationServiceImpl implements CompilationService {
     private final EventRepository eventRepository;
 
     @Override
-    public Compilation createCompilation(UpdateCompilationDto body) {
-        List<Event> events = body.getEvents() == null ? Collections.emptyList() :
-                eventRepository.findEventsByIdIn(body.getEvents());
-        Compilation compilation = compilationRepository.save(toCompilation(body, events));
+    public Compilation createCompilation(UpdateCompilationDto updateCompilationDto) {
+        List<Event> events = updateCompilationDto.getEvents() == null ? Collections.emptyList() :
+                eventRepository.findEventsByIdIn(updateCompilationDto.getEvents());
+        Compilation compilation = compilationRepository.save(toCompilation(updateCompilationDto, events));
 
         log.info(compilation + " создан");
         return compilation;
@@ -68,12 +68,12 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     @Override
-    public CompilationDto updateCompilation(Long compId, UpdateCompilationDto body) {
-        List<Event> events = body.getEvents() == null ? Collections.emptyList() :
-                eventRepository.findEventsByIdIn(body.getEvents());
+    public CompilationDto updateCompilation(Long compId, UpdateCompilationDto updateCompilationDto) {
+        List<Event> events = updateCompilationDto.getEvents() == null ? Collections.emptyList() :
+                eventRepository.findEventsByIdIn(updateCompilationDto.getEvents());
 
         CompilationDto compilationDto = compilationRepository.findById(compId)
-                .map(compilation -> compilationRepository.save(toCompilation(body, events)))
+                .map(compilation -> compilationRepository.save(toCompilation(updateCompilationDto, events)))
                 .map(CompilationMapper::toDto)
                 .orElseThrow(() -> new NotFoundException("Compilation с id=" + compId + " не найден"));
 
@@ -90,6 +90,7 @@ public class CompilationServiceImpl implements CompilationService {
         }
         Long deletedCompilationId = compilation.getId();
         compilationRepository.deleteById(deletedCompilationId);
+
         log.info("Compilation с id={} удален", deletedCompilationId);
     }
 }

@@ -13,7 +13,6 @@ import ru.practicum.ewm.explore.exception.ConflictException;
 import ru.practicum.ewm.explore.exception.NotFoundException;
 import ru.practicum.ewm.explore.request.dto.RequestDto;
 import ru.practicum.ewm.explore.request.dto.RequestStatusUpdate;
-import ru.practicum.ewm.explore.request.mapper.RequestMapper;
 import ru.practicum.ewm.explore.request.model.Request;
 import ru.practicum.ewm.explore.request.repository.RequestRepository;
 import ru.practicum.ewm.explore.user.model.User;
@@ -21,10 +20,11 @@ import ru.practicum.ewm.explore.user.service.UserService;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static ru.practicum.ewm.explore.enumerated.RequestStatus.CONFIRMED;
 import static ru.practicum.ewm.explore.enumerated.RequestStatus.REJECTED;
+import static ru.practicum.ewm.explore.request.mapper.RequestMapper.toDto;
+import static ru.practicum.ewm.explore.request.mapper.RequestMapper.toRequest;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -53,37 +53,43 @@ public class RequestServiceImpl implements RequestService {
                         >= event.getParticipantLimit()) {
             throw new ConflictException("Превышен лимит на количество участников");
         }
-        Request request = RequestMapper.toRequest(user, event);
+        Request request = toRequest(user, event);
         if (event.getParticipantLimit() == 0 || !event.getRequestModeration()) {
             request.setStatus(CONFIRMED);
         }
         Request requestCreated = requestRepository.save(request);
 
         log.info(requestCreated + " создан");
-        return RequestMapper.toDto(requestCreated);
+        return toDto(requestCreated);
     }
 
     @Override
     public List<RequestDto> readUserRequests(Long userId, Long eventId) {
         userService.readUser(userId);
         eventService.findEventById(eventId);
-        return requestRepository.findAllByEventId(eventId).stream()
-                .map(RequestMapper::toDto)
-                .collect(Collectors.toList());
+        List<RequestDto> list = new ArrayList<>();
+        for (Request request : requestRepository.findAllByEventId(eventId)) {
+            RequestDto dto = toDto(request);
+            list.add(dto);
+        }
+        return list;
     }
 
     @Override
     public List<RequestDto> readAllUserRequests(Long userId) {
         userService.readUser(userId);
-        return requestRepository.findAllByRequesterId(userId).stream()
-                .map(RequestMapper::toDto)
-                .collect(Collectors.toList());
+        List<RequestDto> list = new ArrayList<>();
+        for (Request request : requestRepository.findAllByRequesterId(userId)) {
+            RequestDto dto = toDto(request);
+            list.add(dto);
+        }
+        return list;
     }
 
     @Override
-    public RequestStatusUpdate updateRequest(Long userId, Long eventId, EventRequestStatusUpdateRequest eventDto) {
+    public RequestStatusUpdate updateRequest(Long userId, Long reqId, EventRequestStatusUpdateRequest eventDto) {
         userService.readUser(userId);
-        Event event = eventService.findEventById(eventId);
+        Event event = eventService.findEventById(reqId);
 
         RequestStatusUpdate requestUpdated = RequestStatusUpdate.builder()
                 .confirmedRequests(new ArrayList<>())
@@ -102,29 +108,30 @@ public class RequestServiceImpl implements RequestService {
                 event.setConfirmedRequests(event.getConfirmedRequests() + 1);
                 eventRepository.save(event);
                 List<RequestDto> requestDtoList = requestUpdated.getConfirmedRequests();
-                requestDtoList.add(RequestMapper.toDto(request));
+                requestDtoList.add(toDto(request));
                 requestUpdated.setConfirmedRequests(requestDtoList);
             } else if (eventDto.getStatus() == REJECTED) {
                 event.setConfirmedRequests(event.getConfirmedRequests() + 1);
                 eventRepository.save(event);
                 List<RequestDto> requestDtoList = requestUpdated.getRejectedRequests();
-                requestDtoList.add(RequestMapper.toDto(request));
+                requestDtoList.add(toDto(request));
                 requestUpdated.setRejectedRequests(requestDtoList);
             }
         }
+
         log.info(requestUpdated + " обновлен");
         return requestUpdated;
     }
 
     @Override
-    public RequestDto deleteUserRequest(Long userId, Long requestId) {
+    public RequestDto deleteUserRequest(Long userId, Long reqId) {
         userService.readUser(userId);
-        Request request = pickRequest(requestId);
+        Request request = pickRequest(reqId);
         request.setStatus(RequestStatus.CANCELED);
-        requestRepository.deleteById(requestId);
+        requestRepository.deleteById(reqId);
 
-        log.info("Request с id={} удален", requestId);
-        return RequestMapper.toDto(request);
+        log.info("Request с id={} удален", reqId);
+        return toDto(request);
     }
 
     private Request pickRequest(Long reqId) {

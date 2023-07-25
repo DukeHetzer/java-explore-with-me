@@ -2,11 +2,11 @@ package ru.practicum.ewm.stats.dto;
 
 import lombok.*;
 
-@Getter
-@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Getter
+@Setter
 @ToString
 public class EndpointStatsDto {
     private String app;

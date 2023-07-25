@@ -18,14 +18,14 @@ public class AdminCategoryController {
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
-    public CategoryDto createCategory(@RequestBody @Valid NewCategoryDto body) {
-        return service.createCategory(body);
+    public CategoryDto createCategory(@RequestBody @Valid NewCategoryDto newCategoryDto) {
+        return service.createCategory(newCategoryDto);
     }
 
     @PatchMapping("/{catId}")
     public CategoryDto updateCategory(@PathVariable Long catId,
-                                      @RequestBody @Valid CategoryDto body) {
-        return service.updateCategory(catId, body);
+                                      @RequestBody @Valid CategoryDto categoryDto) {
+        return service.updateCategory(catId, categoryDto);
     }
 
     @DeleteMapping("/{catId}")

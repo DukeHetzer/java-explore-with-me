@@ -9,7 +9,8 @@ import ru.practicum.ewm.explore.user.model.User;
 import java.util.List;
 
 public interface UserRepository extends JpaRepository<User, Long> {
-    @Query("SELECT u FROM User AS u " +
-            "WHERE u.id IN ?1")
+    @Query("select u " +
+            "from User as u " +
+            "where u.id in ?1")
     Page<User> findAllByIds(List<Long> ids, Pageable pageable);
 }

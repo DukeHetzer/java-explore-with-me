@@ -16,34 +16,34 @@ import java.time.LocalDateTime;
 public class EventMapper {
     public static EventShortDto toDto(Event event) {
         return EventShortDto.builder()
-                .annotation(event.getAnnotation())
-                .category(CategoryMapper.toDto(event.getCategory()))
-                .confirmedRequests(event.getConfirmedRequests())
-                .eventDate(event.getEventDate())
                 .id(event.getId())
+                .category(CategoryMapper.toDto(event.getCategory()))
                 .initiator(UserMapper.toShortDto(event.getInitiator()))
-                .paid(event.getPaid())
+                .annotation(event.getAnnotation())
+                .confirmedRequests(event.getConfirmedRequests())
                 .title(event.getTitle())
+                .eventDate(event.getEventDate())
+                .paid(event.getPaid())
                 .views(event.getViews())
                 .build();
     }
 
     public static Event toEvent(NewEventDto newEventDto, Category category, User user) {
         return Event.builder()
-                .annotation(newEventDto.getAnnotation())
                 .category(category)
-                .confirmedRequests(0L)
-                .createdOn(LocalDateTime.now())
-                .description(newEventDto.getDescription())
-                .eventDate(newEventDto.getEventDate())
                 .initiator(user)
                 .location(newEventDto.getLocation())
+                .annotation(newEventDto.getAnnotation())
+                .confirmedRequests(0L)
+                .description(newEventDto.getDescription())
+                .state(StatusEvent.PENDING)
+                .title(newEventDto.getTitle())
+                .createdOn(LocalDateTime.now())
+                .eventDate(newEventDto.getEventDate())
                 .paid(newEventDto.getPaid())
                 .participantLimit(newEventDto.getParticipantLimit())
                 .publishedOn(LocalDateTime.now())
                 .requestModeration(newEventDto.getRequestModeration())
-                .state(StatusEvent.PENDING)
-                .title(newEventDto.getTitle())
                 .views(0L)
                 .build();
     }
