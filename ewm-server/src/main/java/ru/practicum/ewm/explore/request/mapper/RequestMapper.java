@@ -16,17 +16,17 @@ public class RequestMapper {
                 .id(request.getId())
                 .event(request.getEvent().getId())
                 .requester(request.getRequester().getId())
-                .status(request.getStatus())
                 .created(request.getCreated())
+                .status(request.getStatus())
                 .build();
     }
 
     public static Request toRequest(User user, Event event) {
         return Request.builder()
-                .requester(user)
                 .event(event)
-                .status(RequestStatus.PENDING)
+                .requester(user)
                 .created(LocalDateTime.now())
+                .status(RequestStatus.PENDING)
                 .build();
     }
 }

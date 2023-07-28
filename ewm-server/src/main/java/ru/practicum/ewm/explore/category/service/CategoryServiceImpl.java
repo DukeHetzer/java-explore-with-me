@@ -27,8 +27,9 @@ public class CategoryServiceImpl implements CategoryService {
     private final EventRepository eventRepository;
 
     @Override
-    public CategoryDto createCategory(NewCategoryDto body) {
-        Category category = categoryRepository.save(toCategory(body));
+    public CategoryDto createCategory(NewCategoryDto newCategoryDto) {
+        Category category = categoryRepository.save(toCategory(newCategoryDto));
+
         log.info(category + " создана");
         return toDto(category);
     }
@@ -46,9 +47,9 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public CategoryDto updateCategory(Long categoryId, CategoryDto body) {
-        Category category = readCategory(categoryId);
-        category.setName(body.getName());
+    public CategoryDto updateCategory(Long catId, CategoryDto categoryDto) {
+        Category category = readCategory(catId);
+        category.setName(categoryDto.getName());
         Category categoryUpdated = categoryRepository.save(category);
 
         log.info(categoryUpdated + " обновлена");
@@ -57,8 +58,10 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public void deleteCategory(Long catId) {
-        if (categoryRepository.existsById(catId) && eventRepository.findEventsByCategoryId(catId).stream().findAny().isEmpty()) {
+        if (categoryRepository.existsById(catId) &&
+                eventRepository.findEventsByCategoryId(catId).stream().findAny().isEmpty()) {
             categoryRepository.deleteById(catId);
+
             log.info("Category с id={} удалена", catId);
         } else
             throw new ConflictException("Category с id=" + catId + " не существует");

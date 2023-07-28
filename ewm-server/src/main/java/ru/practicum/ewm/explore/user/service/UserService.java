@@ -7,7 +7,7 @@ import ru.practicum.ewm.explore.user.model.User;
 import java.util.List;
 
 public interface UserService {
-    UserDto createUser(UserIncomeDto body);
+    UserDto createUser(UserIncomeDto userIncomeDto);
 
     User readUser(Long userId);
 

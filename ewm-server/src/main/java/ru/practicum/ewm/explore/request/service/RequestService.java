@@ -13,7 +13,7 @@ public interface RequestService {
 
     List<RequestDto> readAllUserRequests(Long userId);
 
-    RequestStatusUpdate updateRequest(Long userId, Long requestId, EventRequestStatusUpdateRequest eventDto);
+    RequestStatusUpdate updateRequest(Long userId, Long reqId, EventRequestStatusUpdateRequest eventRequestStatusUpdateRequest);
 
-    RequestDto deleteUserRequest(Long userId, Long requestId);
+    RequestDto deleteUserRequest(Long userId, Long reqId);
 }

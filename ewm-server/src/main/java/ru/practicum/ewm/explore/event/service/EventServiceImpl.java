@@ -9,13 +9,13 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.explore.category.service.CategoryService;
+import ru.practicum.ewm.explore.comments.dto.EventCommentDto;
+import ru.practicum.ewm.explore.comments.service.CommentService;
 import ru.practicum.ewm.explore.enumerated.EventSort;
 import ru.practicum.ewm.explore.enumerated.RequestStatus;
 import ru.practicum.ewm.explore.enumerated.StatusEvent;
-import ru.practicum.ewm.explore.event.dto.EventShortDto;
 import ru.practicum.ewm.explore.event.dto.NewEventDto;
 import ru.practicum.ewm.explore.event.dto.UpdateEventUserRequest;
-import ru.practicum.ewm.explore.event.mapper.EventMapper;
 import ru.practicum.ewm.explore.event.model.Event;
 import ru.practicum.ewm.explore.event.model.Location;
 import ru.practicum.ewm.explore.event.repository.EventRepository;
@@ -46,28 +46,29 @@ import static ru.practicum.ewm.explore.event.mapper.LocationMapper.toLocation;
 public class EventServiceImpl implements EventService {
     private final UserService userService;
     private final CategoryService categoryService;
+    private final CommentService commentService;
     private final EventRepository eventRepository;
-    private final RequestRepository requestRepository;
     private final LocationRepository locationRepository;
+    private final RequestRepository requestRepository;
 
     @Override
     @Transactional
-    public Event createEvent(Long userId, NewEventDto eventDto) {
-        Location location = toLocation(eventDto);
+    public Event createEvent(Long userId, NewEventDto newEventDto) {
+        Location location = toLocation(newEventDto);
 
-        if (eventDto.getPaid() == null) {
-            eventDto.setPaid(false);
+        if (newEventDto.getPaid() == null) {
+            newEventDto.setPaid(false);
         }
-        if (eventDto.getParticipantLimit() == null) {
-            eventDto.setParticipantLimit(0);
+        if (newEventDto.getParticipantLimit() == null) {
+            newEventDto.setParticipantLimit(0);
         }
-        if (eventDto.getRequestModeration() == null) {
-            eventDto.setRequestModeration(true);
+        if (newEventDto.getRequestModeration() == null) {
+            newEventDto.setRequestModeration(true);
         }
-        eventDto.setLocation(locationRepository.save(location));
+        newEventDto.setLocation(locationRepository.save(location));
 
-        Event event = eventRepository.save(toEvent(eventDto,
-                categoryService.readCategory(eventDto.getCategory()),
+        Event event = eventRepository.save(toEvent(newEventDto,
+                categoryService.readCategory(newEventDto.getCategory()),
                 userService.readUser(userId)));
 
         log.info(event + " создано");
@@ -75,65 +76,37 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Event readEvent(Long id) {
-        Event event = findEventById(id);
+    public Event readEvent(Long eventId) {
+        Event event = findEventById(eventId);
         if (!event.getState().equals(StatusEvent.PUBLISHED)) {
-            throw new NotFoundException("Event с id=" + id + " не найден");
+            throw new NotFoundException("Event с id=" + eventId + " не найден");
         }
-        Long requestCounts = requestRepository.countConfirmedRequests(id, RequestStatus.CONFIRMED);
+        Long requestCounts = requestRepository.countConfirmedRequests(eventId, RequestStatus.CONFIRMED);
         event.setConfirmedRequests(requestCounts);
         event.addView();
 
         eventRepository.save(event);
-        return findEventById(id);
+        return findEventById(eventId);
     }
 
     @SneakyThrows
     @Override
-    public List<EventShortDto> readAllEvents(String text, List<Integer> categories, Boolean paid,
-                                             LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable,
-                                             Integer from, Integer size, EventSort sort) {
+    public List<Event> readAllEvents(String text, List<Integer> categories, Boolean paid,
+                                     LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable,
+                                     Integer from, Integer size, EventSort sort) {
         if (rangeEnd != null && rangeStart != null && rangeEnd.isBefore(rangeStart)) {
             throw new ValidationException("Конец не может быть до начала");
         }
         switch (sort) {
             case VIEWS:
-                return eventRepository.findAll(
-                                where(textPredicate(text))
-                                        .and(categoryPredicate(categories))
-                                        .and(paidPredicate(paid))
-                                        .and(rangeEndPredicate(rangeEnd))
-                                        .and(rangeStartPredicate(rangeStart))
-                                        .and(availablePredicate(onlyAvailable)),
-                                PageRequest.of(from, size, Sort.unsorted())).stream()
-                        .sorted(Comparator.comparing(Event::getViews))
-                        .map(EventMapper::toDto)
-                        .collect(Collectors.toList());
-
+                return getEvents(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, from, size,
+                        Comparator.comparing(Event::getViews));
             case EVENT_DATE:
-                return eventRepository.findAll(
-                                where(textPredicate(text))
-                                        .and(categoryPredicate(categories))
-                                        .and(paidPredicate(paid))
-                                        .and(rangeEndPredicate(rangeEnd))
-                                        .and(rangeStartPredicate(rangeStart))
-                                        .and(availablePredicate(onlyAvailable)),
-                                PageRequest.of(from, size, Sort.unsorted())).stream()
-                        .sorted(Comparator.comparing(Event::getEventDate))
-                        .map(EventMapper::toDto)
-                        .collect(Collectors.toList());
+                return getEvents(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, from, size,
+                        Comparator.comparing(Event::getEventDate));
             default:
-                return eventRepository.findAll(
-                                where(textPredicate(text))
-                                        .and(categoryPredicate(categories))
-                                        .and(paidPredicate(paid))
-                                        .and(rangeStartPredicate(rangeStart))
-                                        .and(rangeEndPredicate(rangeEnd))
-                                        .and(availablePredicate(onlyAvailable)),
-                                PageRequest.of(from, size, Sort.unsorted())).stream()
-                        .sorted(Comparator.comparing(Event::getId))
-                        .map(EventMapper::toDto)
-                        .collect(Collectors.toList());
+                return getEvents(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, from, size,
+                        Comparator.comparing(Event::getId));
         }
     }
 
@@ -148,32 +121,32 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventShortDto> readUserEvents(Long userId, Integer from, Integer size) {
+    public List<Event> readUserEvents(Long userId, Integer from, Integer size) {
         userService.readUser(userId);
         return eventRepository.findEventsByInitiatorId(userId, PageRequest.of(from, size, Sort.unsorted())).stream()
-                .map(EventMapper::toDto)
+                .map(event -> toEventComments(event, commentService.readComments(event.getId())))
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional
-    public Event updateEventByAdmin(Long eventId, UpdateEventUserRequest body) {
+    public Event updateEvent(Long eventId, UpdateEventUserRequest updateEventUserRequest) {
         Event event = findEventById(eventId);
 
-        if (body.getEventDate() != null && body.getEventDate().isBefore(LocalDateTime.now())) {
+        if (updateEventUserRequest.getEventDate() != null && updateEventUserRequest.getEventDate().isBefore(LocalDateTime.now())) {
             throw new BadRequestException("Событие уже началось");
         }
 
-        event.setAnnotation(Optional.ofNullable(body.getAnnotation()).orElse(event.getAnnotation()));
-        event.setCategory(Optional.ofNullable(body.getCategory()).map(categoryService::readCategory).orElse(event.getCategory()));
-        event.setDescription(Optional.ofNullable(body.getDescription()).orElse(event.getDescription()));
-        event.setEventDate(Optional.ofNullable(body.getEventDate()).orElse(event.getEventDate()));
-        event.setPaid(Optional.ofNullable(body.getPaid()).orElse(event.getPaid()));
-        event.setParticipantLimit(Optional.ofNullable(body.getParticipantLimit()).orElse(event.getParticipantLimit()));
-        event.setRequestModeration(Optional.ofNullable(body.getRequestModeration()).orElse(event.getRequestModeration()));
-        event.setTitle(Optional.ofNullable(body.getTitle()).orElse(event.getTitle()));
+        event.setCategory(Optional.ofNullable(updateEventUserRequest.getCategory()).map(categoryService::readCategory).orElse(event.getCategory()));
+        event.setAnnotation(Optional.ofNullable(updateEventUserRequest.getAnnotation()).orElse(event.getAnnotation()));
+        event.setDescription(Optional.ofNullable(updateEventUserRequest.getDescription()).orElse(event.getDescription()));
+        event.setTitle(Optional.ofNullable(updateEventUserRequest.getTitle()).orElse(event.getTitle()));
+        event.setEventDate(Optional.ofNullable(updateEventUserRequest.getEventDate()).orElse(event.getEventDate()));
+        event.setPaid(Optional.ofNullable(updateEventUserRequest.getPaid()).orElse(event.getPaid()));
+        event.setParticipantLimit(Optional.ofNullable(updateEventUserRequest.getParticipantLimit()).orElse(event.getParticipantLimit()));
+        event.setRequestModeration(Optional.ofNullable(updateEventUserRequest.getRequestModeration()).orElse(event.getRequestModeration()));
 
-        Optional.ofNullable(body.getLocation())
+        Optional.ofNullable(updateEventUserRequest.getLocation())
                 .ifPresent(location -> {
                     Location eventLocation = event.getLocation();
                     eventLocation.setLat(location.getLat());
@@ -181,7 +154,7 @@ public class EventServiceImpl implements EventService {
                     event.setLocation(eventLocation);
                 });
 
-        Optional.ofNullable(body.getStateAction())
+        Optional.ofNullable(updateEventUserRequest.getStateAction())
                 .ifPresent(stateAction -> {
                     if (event.getState().equals(StatusEvent.PUBLISHED) && stateAction.equals(StatusEvent.REJECT_EVENT)) {
                         throw new ConflictException("Событие уже опубликовано");
@@ -195,7 +168,6 @@ public class EventServiceImpl implements EventService {
                     if (event.getState().equals(StatusEvent.PUBLISH_EVENT) && stateAction.equals(StatusEvent.PUBLISHED)) {
                         throw new ConflictException("Событие уже опубликовано");
                     }
-
                     if (stateAction.equals(StatusEvent.SEND_TO_REVIEW)) {
                         event.setState(StatusEvent.PENDING);
                     }
@@ -210,29 +182,34 @@ public class EventServiceImpl implements EventService {
                     }
                 });
         Event eventUpdated = eventRepository.save(event);
+        List<EventCommentDto> comments = commentService.readComments(eventId);
 
         log.info(eventUpdated + " обновлено");
-        return eventUpdated;
+        return toEventComments(eventUpdated, comments);
     }
 
     @Override
     @Transactional
-    public Event updateUserEvent(Long eventId, Long userId, UpdateEventUserRequest eventDto) {
+    public Event updateUserEvent(Long eventId, Long userId, UpdateEventUserRequest updateEventUserRequest) {
         Event event = findEventById(eventId);
         if (event.getState() != null && event.getState().equals(StatusEvent.PUBLISHED)) {
             throw new ConflictException("Событие уже опубликовано");
         }
-        if (eventDto.getStateAction() != null && eventDto.getStateAction().equals(StatusEvent.PUBLISHED)) {
+        if (updateEventUserRequest.getStateAction() != null && updateEventUserRequest.getStateAction().equals(StatusEvent.PUBLISHED)) {
             throw new ConflictException("Событие уже опубликовано");
         }
-        if (eventDto.getStateAction() != null && eventDto.getStateAction().equals(StatusEvent.CANCEL_REVIEW)) {
+        if (updateEventUserRequest.getStateAction() != null && updateEventUserRequest.getStateAction().equals(StatusEvent.CANCEL_REVIEW)) {
             event.setState(StatusEvent.CANCELED);
         }
         userService.readUser(userId);
-        if (eventDto.getEventDate() != null && eventDto.getEventDate().isBefore(LocalDateTime.now())) {
+        if (updateEventUserRequest.getEventDate() != null && updateEventUserRequest.getEventDate().isBefore(LocalDateTime.now())) {
             throw new BadRequestException("Событие уже началось");
         }
-        return updateEventData(event, eventDto);
+        Event eventUpdated = updateEventData(event, updateEventUserRequest);
+        List<EventCommentDto> comments = commentService.readComments(eventId);
+
+        log.info(eventUpdated + " обновлено");
+        return toEventComments(eventUpdated, comments);
     }
 
     @Override
@@ -247,17 +224,20 @@ public class EventServiceImpl implements EventService {
                                     .and((event, cq, cb) -> cb.lessThan(event.get("eventDate"), rangeEnd)),
                             PageRequest.of(from, size, Sort.unsorted()))
                     .stream()
+                    .map(event -> toEventComments(event, commentService.readComments(event.getId())))
                     .collect(Collectors.toList());
         } else {
             return eventRepository.findAll(PageRequest.of(from, size, Sort.unsorted())).stream()
+                    .map(event -> toEventComments(event, commentService.readComments(event.getId())))
                     .collect(Collectors.toList());
         }
     }
 
     @Override
     public Event findEventById(Long eventId) {
-        return eventRepository.findById(eventId).orElseThrow(
-                () -> new NotFoundException("Event с id=" + eventId + " не найден"));
+        List<EventCommentDto> comments = commentService.readComments(eventId);
+        return toEventComments(eventRepository.findById(eventId).orElseThrow(
+                () -> new NotFoundException("Event с id=" + eventId + " не найден")), comments);
     }
 
     private Specification<Event> textPredicate(String text) {
@@ -354,23 +334,44 @@ public class EventServiceImpl implements EventService {
         };
     }
 
+    private List<Event> getEvents(String text, List<Integer> categories, Boolean paid, LocalDateTime rangeStart,
+                                  LocalDateTime rangeEnd, Boolean onlyAvailable, Integer from, Integer size,
+                                  Comparator<Event> comparing) {
+        return eventRepository.findAll(
+                        where(textPredicate(text))
+                                .and(categoryPredicate(categories))
+                                .and(paidPredicate(paid))
+                                .and(rangeEndPredicate(rangeEnd))
+                                .and(rangeStartPredicate(rangeStart))
+                                .and(availablePredicate(onlyAvailable)),
+                        PageRequest.of(from, size, Sort.unsorted())).stream()
+                .sorted(comparing)
+                .map(event -> toEventComments(event, commentService.readComments(event.getId())))
+                .collect(Collectors.toList());
+    }
+
     private Event updateEventData(Event event, UpdateEventUserRequest dto) {
         return Event.builder()
-                .annotation(dto.getAnnotation() != null ? dto.getAnnotation() : event.getAnnotation())
                 .category(dto.getCategory() != null ? categoryService.readCategory(dto.getCategory()) : event.getCategory())
-                .confirmedRequests(event.getConfirmedRequests())
-                .createdOn(event.getCreatedOn())
-                .description(dto.getDescription() != null ? dto.getDescription() : event.getDescription())
-                .eventDate(dto.getEventDate() != null ? dto.getEventDate() : event.getEventDate())
                 .initiator(event.getInitiator())
                 .location(dto.getLocation() != null ? dto.getLocation() : event.getLocation())
+                .annotation(dto.getAnnotation() != null ? dto.getAnnotation() : event.getAnnotation())
+                .confirmedRequests(event.getConfirmedRequests())
+                .description(dto.getDescription() != null ? dto.getDescription() : event.getDescription())
+                .state(dto.getStateAction() == StatusEvent.SEND_TO_REVIEW ? StatusEvent.PENDING : event.getState())
+                .title(dto.getTitle() != null ? dto.getTitle() : event.getTitle())
+                .createdOn(event.getCreatedOn())
+                .eventDate(dto.getEventDate() != null ? dto.getEventDate() : event.getEventDate())
                 .paid(dto.getPaid() != null ? dto.getPaid() : event.getPaid())
                 .participantLimit(dto.getParticipantLimit() != null ? dto.getParticipantLimit() : event.getParticipantLimit())
                 .publishedOn(event.getPublishedOn())
                 .requestModeration(dto.getRequestModeration() != null ? dto.getRequestModeration() : event.getRequestModeration())
-                .state(dto.getStateAction() == StatusEvent.SEND_TO_REVIEW ? StatusEvent.PENDING : event.getState())
-                .title(dto.getTitle() != null ? dto.getTitle() : event.getTitle())
                 .views(event.getViews())
                 .build();
+    }
+
+    public static Event toEventComments(Event event, List<EventCommentDto> comments) {
+        event.setComments(comments);
+        return event;
     }
 }

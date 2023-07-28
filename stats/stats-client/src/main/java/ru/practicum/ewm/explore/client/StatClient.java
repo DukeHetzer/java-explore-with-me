@@ -9,7 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 
 import javax.servlet.http.HttpServletRequest;
-import java.time.LocalDateTime;
+
+import static ru.practicum.ewm.explore.client.HitMapper.toHit;
 
 @Service
 public class StatClient extends BaseClient {
@@ -26,12 +27,7 @@ public class StatClient extends BaseClient {
     }
 
     public ResponseEntity<Object> addStatHit(HttpServletRequest request) {
-        Hit hit = Hit.builder()
-                .ip(request.getRemoteAddr())
-                .uri(request.getRequestURI())
-                .app("ewm-main-service")
-                .timestamp(LocalDateTime.now())
-                .build();
+        Hit hit = toHit(request);
         return post(hit);
     }
 }

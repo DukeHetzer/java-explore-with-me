@@ -27,7 +27,7 @@ public class UpdateEventUserRequest {
     private StatusEvent stateAction;
     @Size(min = 3, max = 120)
     private String title;
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime eventDate;
     private Boolean paid;
     private Integer participantLimit;

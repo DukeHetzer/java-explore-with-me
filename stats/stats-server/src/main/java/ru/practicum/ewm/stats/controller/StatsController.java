@@ -11,15 +11,15 @@ import ru.practicum.ewm.stats.service.StatsServiceImpl;
 import javax.validation.constraints.NotNull;
 import java.util.List;
 
-@RestController
 @RequiredArgsConstructor
+@RestController
 public class StatsController {
-    private final StatsServiceImpl statsService;
+    private final StatsServiceImpl service;
 
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/hit")
     public EndpointHit addHit(@RequestBody EndpointHitDto endpointHitDto) {
-        return statsService.addHit(endpointHitDto);
+        return service.addHit(endpointHitDto);
     }
 
     @GetMapping("/stats")
@@ -27,6 +27,6 @@ public class StatsController {
                                            @RequestParam @NotNull String end,
                                            @RequestParam(defaultValue = "") List<String> uris,
                                            @RequestParam(defaultValue = "false") Boolean unique) {
-        return statsService.getStats(start, end, uris, unique);
+        return service.getStats(start, end, uris, unique);
     }
 }

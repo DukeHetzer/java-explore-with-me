@@ -16,6 +16,7 @@ import ru.practicum.ewm.explore.user.repository.UserRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static ru.practicum.ewm.explore.user.mapper.UserMapper.toDto;
 import static ru.practicum.ewm.explore.user.mapper.UserMapper.toUser;
 
 
@@ -26,12 +27,12 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
 
     @Override
-    public UserDto createUser(UserIncomeDto body) {
-        checkEmail(body);
-        User user = userRepository.save(toUser(body));
+    public UserDto createUser(UserIncomeDto userIncomeDto) {
+        checkEmail(userIncomeDto);
+        User user = userRepository.save(toUser(userIncomeDto));
 
         log.info(user + " создан");
-        return UserMapper.toDto(user);
+        return toDto(user);
     }
 
     @Override
@@ -57,6 +58,7 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(Long userId) {
         readUser(userId);
         userRepository.deleteById(userId);
+
         log.info("User с id={} удален", userId);
     }
 

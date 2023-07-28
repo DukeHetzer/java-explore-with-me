@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter;
 public class EndpointHitMapper {
     public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public static EndpointHit toHit(EndpointHitDto endpointHitDto) {
+    public static EndpointHit toEndpointHit(EndpointHitDto endpointHitDto) {
         return EndpointHit.builder()
                 .id(endpointHitDto.getId())
                 .uri(endpointHitDto.getUri())

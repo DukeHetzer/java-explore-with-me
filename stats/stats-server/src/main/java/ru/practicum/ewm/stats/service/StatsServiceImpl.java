@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import ru.practicum.ewm.stats.dto.EndpointHitDto;
 import ru.practicum.ewm.stats.dto.EndpointStatsDto;
 import ru.practicum.ewm.stats.exception.WrongDateException;
-import ru.practicum.ewm.stats.mapper.EndpointHitMapper;
 import ru.practicum.ewm.stats.model.EndpointHit;
 import ru.practicum.ewm.stats.repository.EndpointHitRepository;
 
@@ -17,6 +16,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static ru.practicum.ewm.stats.mapper.EndpointHitMapper.toEndpointHit;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -28,7 +29,7 @@ public class StatsServiceImpl implements StatsService {
     @Transactional
     @Override
     public EndpointHit addHit(EndpointHitDto endpointHitDto) {
-        EndpointHit endpointHit = EndpointHitMapper.toHit(endpointHitDto);
+        EndpointHit endpointHit = toEndpointHit(endpointHitDto);
         repository.save(endpointHit);
 
         log.info(endpointHit + " создан");
@@ -38,17 +39,20 @@ public class StatsServiceImpl implements StatsService {
     @SneakyThrows
     @Override
     public List<EndpointStatsDto> getStats(String start, String end, List<String> uris, Boolean unique) {
-        if (LocalDateTime.parse(start, TIME_FORMATTER).isAfter(LocalDateTime.parse(end, TIME_FORMATTER)))
+        if (LocalDateTime.parse(start, TIME_FORMATTER).isAfter(LocalDateTime.parse(end, TIME_FORMATTER))) {
             throw new WrongDateException("Стартовая дата некорректна");
-        if (LocalDateTime.parse(start, TIME_FORMATTER).equals(LocalDateTime.parse(end, TIME_FORMATTER)))
+        }
+        if (LocalDateTime.parse(start, TIME_FORMATTER).equals(LocalDateTime.parse(end, TIME_FORMATTER))) {
             throw new WrongDateException("Финишная дата некорректна");
+        }
         List<EndpointHit> hits;
-        if (uris.isEmpty())
+        if (uris.isEmpty()) {
             hits = repository.findAllByTimestampBetween(LocalDateTime.parse(start, TIME_FORMATTER),
                     LocalDateTime.parse(end, TIME_FORMATTER));
-        else
+        } else {
             hits = repository.findAllByTimestampBetweenAndUriIn(LocalDateTime.parse(start, TIME_FORMATTER),
                     LocalDateTime.parse(end, TIME_FORMATTER), uris);
+        }
         return hits.stream()
                 .collect(Collectors.groupingBy(EndpointHit::getUri))
                 .values()
